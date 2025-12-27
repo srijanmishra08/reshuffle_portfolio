@@ -118,7 +118,7 @@ function buildExpandableTextBlock(content: ScoredContent, base: any): Expandable
     if (content.extracted_data.company) {
       parts.push(`🏢 ${content.extracted_data.company}`);
     }
-    if (content.extracted_data.top_repos?.length > 0) {
+    if (content.extracted_data.top_repos && content.extracted_data.top_repos.length > 0) {
       parts.push('\n\n🔥 Top Projects:');
       for (const repo of content.extracted_data.top_repos.slice(0, 3)) {
         parts.push(`• ${repo.name} - ${repo.description || 'No description'} (⭐${repo.stars})`);

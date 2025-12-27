@@ -4,7 +4,7 @@
  * Based on 07_CONTENT_INGESTION.md
  */
 
-import type { NormalizedContent, VideoMetadata, FileInput, UserMetadata } from '../../types/index.js';
+import type { NormalizedContent, FileInput, UserMetadata } from '../../types/index.js';
 import { generateContentId, now } from '../../utils/index.js';
 import { saveFile } from '../storage.js';
 

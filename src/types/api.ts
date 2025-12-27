@@ -4,7 +4,7 @@
  */
 
 import type { Category, Portfolio } from './portfolio.js';
-import type { ContentSource, NormalizedContent } from './content.js';
+import type { ContentSource } from './content.js';
 
 // ============================================
 // API RESPONSES

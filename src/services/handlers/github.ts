@@ -5,7 +5,7 @@
  */
 
 import type { NormalizedContent, GitHubMetadata } from '../../types/index.js';
-import { generateContentId, now } from '../../utils/index.js';
+import { generateContentId } from '../../utils/index.js';
 import { extractGitHubRepo } from '../../utils/platform-detection.js';
 
 // Simple in-memory cache
