@@ -140,15 +140,20 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 // SERVER STARTUP
 // ============================================
 
-async function start() {
-  try {
-    // Initialize storage directories
-    await initStorage();
-    console.log('✓ Storage initialized');
-    
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`
+// Export for Vercel serverless
+export default app;
+
+// Only start server if not in Vercel environment
+if (process.env.VERCEL !== '1') {
+  async function start() {
+    try {
+      // Initialize storage directories
+      await initStorage();
+      console.log('✓ Storage initialized');
+      
+      // Start server
+      app.listen(PORT, () => {
+        console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
 ║   🚀 Portfolio Engine Server                              ║
@@ -160,12 +165,13 @@ async function start() {
 ║   Test Webpage: http://localhost:${PORT}/                   ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
-      `);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+        `);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
   }
-}
 
-start();
+  start();
+}
