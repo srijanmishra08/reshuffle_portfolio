@@ -60,7 +60,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Build raw inputs from request
       const rawInputs: any[] = [];
       
-      // Add URL inputs
+      // Handle inputs array from iOS app
+      if (body.inputs && Array.isArray(body.inputs)) {
+        for (const input of body.inputs) {
+          if (input.type === 'url' && input.url) {
+            rawInputs.push({
+              type: 'url',
+              url: input.url,
+              metadata: {
+                title: input.title,
+                description: input.description
+              }
+            });
+          } else if (input.type === 'text' && input.text) {
+            rawInputs.push({
+              type: 'text',
+              text: input.text,
+              metadata: {
+                title: input.title,
+                description: input.description
+              }
+            });
+          } else if (input.type === 'file' && input.file_path) {
+            // Handle file paths (Firebase Storage URLs)
+            rawInputs.push({
+              type: 'url',
+              url: input.file_path,
+              metadata: {
+                title: input.title,
+                description: input.description
+              }
+            });
+          }
+        }
+      }
+      
+      // Also support legacy urls/texts format
       if (body.urls && Array.isArray(body.urls)) {
         for (const urlInput of body.urls) {
           rawInputs.push({
@@ -74,7 +109,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // Add text inputs
       if (body.texts && Array.isArray(body.texts)) {
         for (const textInput of body.texts) {
           rawInputs.push({
@@ -86,6 +120,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           });
         }
+      }
+
+      // If no inputs provided, return error
+      if (rawInputs.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'No valid inputs provided'
+          }
+        });
       }
 
       // Ingest content
