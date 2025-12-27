@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Engine - Test Interface</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1a1a1a;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --accent: #007AFF;
+      --accent-hover: #0056b3;
+      --success: #34c759;
+      --error: #ff3b30;
+      --warning: #ff9500;
+      --border: #2a2a2a;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 40px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #007AFF, #5856D6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    /* Main Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 32px;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 16px 20px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-content {
+      padding: 20px;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* Input List */
+    .input-list {
+      margin-bottom: 16px;
+    }
+
+    .input-item {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .input-item .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .input-item .icon.url { background: #5856D6; }
+    .input-item .icon.file { background: #34c759; }
+    .input-item .icon.text { background: #ff9500; }
+
+    .input-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .input-item .info .name {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .input-item .info .meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .input-item .remove {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 18px;
+    }
+
+    .input-item .remove:hover {
+      color: var(--error);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Add Input Section */
+    .add-input-section {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .add-input-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .add-input-tab {
+      flex: 1;
+      padding: 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .add-input-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .add-input-form {
+      display: none;
+    }
+
+    .add-input-form.active {
+      display: block;
+    }
+
+    /* File Drop Zone */
+    .file-drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .file-drop-zone:hover,
+    .file-drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(0, 122, 255, 0.1);
+    }
+
+    .file-drop-zone .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .file-drop-zone p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .file-drop-zone .supported {
+      font-size: 12px;
+      margin-top: 8px;
+      color: var(--text-secondary);
+    }
+
+    /* Output Panel */
+    .output-panel {
+      position: sticky;
+      top: 24px;
+    }
+
+    .output-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .output-tab {
+      flex: 1;
+      padding: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .output-tab.active {
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .output-content {
+      display: none;
+      padding: 20px;
+    }
+
+    .output-content.active {
+      display: block;
+    }
+
+    /* JSON Display */
+    .json-output {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .json-output pre {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Portfolio Preview */
+    .portfolio-preview {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .portfolio-header {
+      padding: 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .portfolio-header h2 {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .portfolio-header p {
+      color: var(--text-secondary);
+    }
+
+    .section-preview {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-preview:last-child {
+      border-bottom: none;
+    }
+
+    .section-header {
+      padding: 12px 20px;
+      background: rgba(0, 122, 255, 0.1);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+    }
+
+    .block-preview {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .block-preview:first-child {
+      border-top: none;
+    }
+
+    .block-type {
+      display: inline-block;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .block-content {
+      font-size: 14px;
+    }
+
+    /* Status Messages */
+    .status {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.loading {
+      background: rgba(0, 122, 255, 0.2);
+      border: 1px solid var(--accent);
+    }
+
+    .status.success {
+      background: rgba(52, 199, 89, 0.2);
+      border: 1px solid var(--success);
+    }
+
+    .status.error {
+      background: rgba(255, 59, 48, 0.2);
+      border: 1px solid var(--error);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--text-secondary);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Platform Badges */
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .platform-badge.youtube { background: #ff0000; color: white; }
+    .platform-badge.github { background: #333; color: white; }
+    .platform-badge.instagram { background: linear-gradient(45deg, #f09433, #dc2743); color: white; }
+    .platform-badge.linkedin { background: #0077b5; color: white; }
+    .platform-badge.tiktok { background: #000; color: white; }
+    .platform-badge.website { background: var(--text-secondary); color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎨 Portfolio Engine</h1>
+      <p>Test interface for the AI-powered portfolio generation engine</p>
+    </header>
+
+    <div class="main-grid">
+      <!-- Input Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          📥 Input Configuration
+        </div>
+        <div class="panel-content">
+          <!-- Status Message -->
+          <div id="status" class="status"></div>
+
+          <!-- Basic Info -->
+          <div class="form-group">
+            <label>User ID</label>
+            <input type="text" id="userId" value="test_user_123" placeholder="Enter user ID">
+          </div>
+
+          <div class="form-group">
+            <label>Portfolio Title</label>
+            <input type="text" id="title" placeholder="e.g., John's Portfolio">
+          </div>
+
+          <div class="form-group">
+            <label>Subtitle</label>
+            <input type="text" id="subtitle" placeholder="e.g., Software Engineer & Designer">
+          </div>
+
+          <div class="form-group">
+            <label>Category</label>
+            <select id="category">
+              <option value="Tech">Tech</option>
+              <option value="Design">Design</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Finance">Finance</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Legal">Legal</option>
+              <option value="Influencers">Influencers</option>
+              <option value="Business">Business</option>
+            </select>
+          </div>
+
+          <!-- Input List -->
+          <div class="form-group">
+            <label>Content Inputs (<span id="inputCount">0</span>)</label>
+            <div id="inputList" class="input-list">
+              <!-- Items will be added here -->
+            </div>
+          </div>
+
+          <!-- Add Input Section -->
+          <div class="add-input-section">
+            <div class="add-input-tabs">
+              <button class="add-input-tab active" data-tab="url">🔗 URL</button>
+              <button class="add-input-tab" data-tab="file">📁 File</button>
+              <button class="add-input-tab" data-tab="text">📝 Text</button>
+            </div>
+
+            <!-- URL Form -->
+            <div id="urlForm" class="add-input-form active">
+              <div class="form-group">
+                <input type="url" id="urlInput" placeholder="Enter URL (YouTube, GitHub, Instagram, etc.)">
+              </div>
+              <div class="form-group">
+                <input type="text" id="urlTitle" placeholder="Title (optional)">
+              </div>
+              <div class="form-group">
+                <input type="text" id="urlDesc" placeholder="Description (optional)">
+              </div>
+              <button class="btn btn-secondary" onclick="addUrlInput()">+ Add URL</button>
+            </div>
+
+            <!-- File Form -->
+            <div id="fileForm" class="add-input-form">
+              <div class="file-drop-zone" id="dropZone">
+                <div class="icon">📄</div>
+                <p>Drop files here or click to browse</p>
+                <p class="supported">Supports: Images, Videos, PDFs</p>
+                <input type="file" id="fileInput" multiple accept="image/*,video/*,.pdf" style="display: none">
+              </div>
+            </div>
+
+            <!-- Text Form -->
+            <div id="textForm" class="add-input-form">
+              <div class="form-group">
+                <textarea id="textInput" placeholder="Enter your text content..."></textarea>
+              </div>
+              <div class="form-group">
+                <input type="text" id="textTitle" placeholder="Title (optional)">
+              </div>
+              <button class="btn btn-secondary" onclick="addTextInput()">+ Add Text</button>
+            </div>
+          </div>
+
+          <!-- Generate Button -->
+          <div style="margin-top: 24px">
+            <button class="btn btn-primary" id="generateBtn" onclick="generatePortfolio()" style="width: 100%">
+              🚀 Generate Portfolio
+            </button>
+          </div>
+
+          <!-- Quick Test Data -->
+          <div style="margin-top: 16px; text-align: center">
+            <button class="btn btn-secondary" onclick="loadSampleData()" style="font-size: 12px">
+              Load Sample Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="panel output-panel">
+        <div class="output-tabs">
+          <button class="output-tab active" data-tab="preview">📱 Preview</button>
+          <button class="output-tab" data-tab="json">📄 JSON</button>
+          <button class="output-tab" data-tab="stats">📊 Stats</button>
+          <a href="/preview" target="_blank" class="output-tab" style="text-decoration: none; margin-left: auto; background: linear-gradient(135deg, #667eea, #764ba2); color: white;">🎬 Interactive Reel</a>
+        </div>
+
+        <!-- Preview Tab -->
+        <div id="previewTab" class="output-content active">
+          <div id="portfolioPreview" class="empty-state">
+            <div class="icon">📋</div>
+            <p>Add content and click "Generate Portfolio" to see results</p>
+          </div>
+        </div>
+
+        <!-- JSON Tab -->
+        <div id="jsonTab" class="output-content">
+          <div class="json-output">
+            <pre id="jsonOutput">No portfolio generated yet.</pre>
+          </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="statsTab" class="output-content">
+          <div id="statsOutput" class="empty-state">
+            <div class="icon">📊</div>
+            <p>Statistics will appear after generation</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // STATE
+    // ============================================
+    
+    const state = {
+      inputs: [],
+      files: [],
+      portfolio: null
+    };
+
+    // ============================================
+    // TAB SWITCHING
+    // ============================================
+
+    document.querySelectorAll('.add-input-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.add-input-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.add-input-form').forEach(f => f.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}Form`).classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.output-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.output-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.output-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}Tab`).classList.add('active');
+      });
+    });
+
+    // ============================================
+    // FILE HANDLING
+    // ============================================
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+      for (const file of files) {
+        const type = file.type.startsWith('image/') ? 'image' :
+                     file.type.startsWith('video/') ? 'video' :
+                     file.type === 'application/pdf' ? 'pdf' : null;
+        
+        if (type) {
+          state.files.push(file);
+          state.inputs.push({
+            type: 'file',
+            fileIndex: state.files.length - 1,
+            name: file.name,
+            size: formatFileSize(file.size),
+            fileType: type
+          });
+          updateInputList();
+        }
+      }
+    }
+
+    // ============================================
+    // INPUT MANAGEMENT
+    // ============================================
+
+    function addUrlInput() {
+      const url = document.getElementById('urlInput').value.trim();
+      const title = document.getElementById('urlTitle').value.trim();
+      const desc = document.getElementById('urlDesc').value.trim();
+
+      if (!url) {
+        showStatus('Please enter a URL', 'error');
+        return;
+      }
+
+      try {
+        new URL(url);
+      } catch {
+        showStatus('Invalid URL format', 'error');
+        return;
+      }
+
+      const platform = detectPlatform(url);
+      
+      state.inputs.push({
+        type: 'url',
+        url,
+        title,
+        description: desc,
+        platform
+      });
+
+      document.getElementById('urlInput').value = '';
+      document.getElementById('urlTitle').value = '';
+      document.getElementById('urlDesc').value = '';
+      
+      updateInputList();
+    }
+
+    function addTextInput() {
+      const text = document.getElementById('textInput').value.trim();
+      const title = document.getElementById('textTitle').value.trim();
+
+      if (!text) {
+        showStatus('Please enter some text', 'error');
+        return;
+      }
+
+      state.inputs.push({
+        type: 'text',
+        text,
+        title,
+        preview: text.substring(0, 50) + (text.length > 50 ? '...' : '')
+      });
+
+      document.getElementById('textInput').value = '';
+      document.getElementById('textTitle').value = '';
+      
+      updateInputList();
+    }
+
+    function removeInput(index) {
+      const input = state.inputs[index];
+      if (input.type === 'file') {
+        // Also remove from files array
+        state.files.splice(input.fileIndex, 1);
+        // Update fileIndex for remaining items
+        state.inputs.forEach(inp => {
+          if (inp.type === 'file' && inp.fileIndex > input.fileIndex) {
+            inp.fileIndex--;
+          }
+        });
+      }
+      state.inputs.splice(index, 1);
+      updateInputList();
+    }
+
+    function updateInputList() {
+      const list = document.getElementById('inputList');
+      document.getElementById('inputCount').textContent = state.inputs.length;
+
+      if (state.inputs.length === 0) {
+        list.innerHTML = '<div class="empty-state" style="padding: 20px"><p>No inputs added yet</p></div>';
+        return;
+      }
+
+      list.innerHTML = state.inputs.map((input, index) => {
+        let icon, name, meta;
+        
+        if (input.type === 'url') {
+          icon = `<span class="platform-badge ${input.platform}">${input.platform}</span>`;
+          name = input.title || input.url;
+          meta = input.platform === 'youtube' || input.platform === 'github' ? 
+                 '(content will be extracted)' : '(clickable link)';
+        } else if (input.type === 'file') {
+          icon = `<div class="icon file">📁</div>`;
+          name = input.name;
+          meta = `${input.fileType} • ${input.size}`;
+        } else {
+          icon = `<div class="icon text">📝</div>`;
+          name = input.title || 'Text Input';
+          meta = input.preview;
+        }
+
+        return `
+          <div class="input-item">
+            ${icon}
+            <div class="info">
+              <div class="name">${escapeHtml(name)}</div>
+              <div class="meta">${escapeHtml(meta)}</div>
+            </div>
+            <button class="remove" onclick="removeInput(${index})">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============================================
+    // PORTFOLIO GENERATION
+    // ============================================
+
+    async function generatePortfolio() {
+      const userId = document.getElementById('userId').value.trim();
+      const title = document.getElementById('title').value.trim();
+      const subtitle = document.getElementById('subtitle').value.trim();
+      const category = document.getElementById('category').value;
+
+      if (!userId || !title) {
+        showStatus('Please fill in User ID and Title', 'error');
+        return;
+      }
+
+      if (state.inputs.length === 0) {
+        showStatus('Please add at least one content input', 'error');
+        return;
+      }
+
+      showStatus('Generating portfolio...', 'loading');
+      document.getElementById('generateBtn').disabled = true;
+
+      try {
+        // Build form data
+        const formData = new FormData();
+        
+        // Add JSON data
+        const urls = state.inputs
+          .filter(i => i.type === 'url')
+          .map(i => ({ url: i.url, title: i.title, description: i.description }));
+        
+        const texts = state.inputs
+          .filter(i => i.type === 'text')
+          .map(i => ({ text: i.text, title: i.title }));
+
+        formData.append('data', JSON.stringify({
+          user_id: userId,
+          title,
+          subtitle,
+          category,
+          urls: urls.length > 0 ? urls : undefined,
+          texts: texts.length > 0 ? texts : undefined
+        }));
+
+        // Add files
+        state.inputs.forEach(input => {
+          if (input.type === 'file') {
+            formData.append('files', state.files[input.fileIndex]);
+          }
+        });
+
+        // Make API request
+        const response = await fetch('/api/portfolios/generate', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || result.error || 'Generation failed');
+        }
+
+        state.portfolio = result.portfolio;
+        
+        showStatus(`Portfolio generated successfully!`, 'success');
+        renderPortfolioPreview(result.portfolio);
+        renderJsonOutput(result);
+        renderStats(result);
+
+      } catch (error) {
+        console.error('Error:', error);
+        showStatus(`Error: ${error.message}`, 'error');
+      } finally {
+        document.getElementById('generateBtn').disabled = false;
+      }
+    }
+
+    // ============================================
+    // RENDERING
+    // ============================================
+
+    function renderPortfolioPreview(portfolio) {
+      const container = document.getElementById('portfolioPreview');
+      
+      let html = `
+        <div class="portfolio-preview">
+          <div class="portfolio-header">
+            <h2>${escapeHtml(portfolio.meta.title)}</h2>
+            <p>${escapeHtml(portfolio.meta.subtitle || '')}</p>
+            <span class="platform-badge" style="background: var(--accent); margin-top: 8px">
+              ${portfolio.category}
+            </span>
+          </div>
+      `;
+
+      portfolio.sections.forEach(section => {
+        html += `
+          <div class="section-preview">
+            <div class="section-header">${section.section_id}</div>
+        `;
+
+        section.blocks.forEach(block => {
+          html += `
+            <div class="block-preview">
+              <span class="block-type">${block.block_type}</span>
+              <div class="block-content">
+                ${renderBlockContent(block)}
+              </div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function renderBlockContent(block) {
+      switch (block.block_type) {
+        case 'media':
+          if (block.content.media_type === 'video') {
+            return `<p>🎬 Video: ${escapeHtml(block.content.alt_text || 'Video content')}</p>`;
+          }
+          return `<p>🖼️ Image: ${escapeHtml(block.content.alt_text || 'Image content')}</p>`;
+        
+        case 'expandable_text':
+          return `<p>${escapeHtml(block.content.preview?.text || block.content.full_content?.text || '')}</p>`;
+        
+        case 'metric':
+          return block.content.metrics.map(m => 
+            `<div class="metric-card"><div class="metric-value">${m.value}${m.unit || ''}</div><div class="metric-label">${m.label}</div></div>`
+          ).join('');
+        
+        case 'external_link':
+          return `<p>🔗 <a href="${escapeHtml(block.content.url)}" target="_blank">${escapeHtml(block.content.preview?.title || block.content.url)}</a></p>`;
+        
+        case 'cta':
+          return `<p>📞 ${escapeHtml(block.content.primary_action?.label || 'Contact')}</p>`;
+        
+        case 'gallery':
+          return `<p>🖼️ Gallery with ${block.content.items?.length || 0} items</p>`;
+        
+        case 'timeline':
+          return `<p>📅 Timeline with ${block.content.entries?.length || 0} entries</p>`;
+        
+        default:
+          return `<p>${block.block_type} block</p>`;
+      }
+    }
+
+    function renderJsonOutput(result) {
+      document.getElementById('jsonOutput').textContent = JSON.stringify(result, null, 2);
+    }
+
+    function renderStats(result) {
+      const container = document.getElementById('statsOutput');
+      const summary = result.processing_summary;
+      
+      container.innerHTML = `
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value">${summary.total_inputs}</div>
+            <div class="metric-label">Total Inputs</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">${summary.processed}</div>
+            <div class="metric-label">Processed</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">${summary.sections_generated}</div>
+            <div class="metric-label">Sections</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">${summary.blocks_generated}</div>
+            <div class="metric-label">Blocks</div>
+          </div>
+        </div>
+        <div style="margin-top: 16px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-sm)">
+          <p style="margin-bottom: 8px"><strong>Portfolio ID:</strong> ${result.portfolio.portfolio_id}</p>
+          <p style="margin-bottom: 8px"><strong>Category:</strong> ${result.portfolio.category}</p>
+          <p style="margin-bottom: 8px"><strong>Created:</strong> ${new Date(result.portfolio.meta.created_at).toLocaleString()}</p>
+          <p><strong>Version:</strong> ${result.portfolio.version}</p>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // HELPERS
+    // ============================================
+
+    function detectPlatform(url) {
+      const hostname = new URL(url).hostname.toLowerCase();
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'youtube';
+      if (hostname.includes('github.com')) return 'github';
+      if (hostname.includes('instagram.com')) return 'instagram';
+      if (hostname.includes('linkedin.com')) return 'linkedin';
+      if (hostname.includes('tiktok.com')) return 'tiktok';
+      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'twitter';
+      return 'website';
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.className = `status show ${type}`;
+      
+      if (type === 'loading') {
+        status.innerHTML = `<span class="spinner"></span>${message}`;
+      } else {
+        status.textContent = message;
+        if (type === 'success' || type === 'error') {
+          setTimeout(() => status.classList.remove('show'), 5000);
+        }
+      }
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    function loadSampleData() {
+      document.getElementById('title').value = "Alex Chen's Tech Portfolio";
+      document.getElementById('subtitle').value = "Full-Stack Developer & Open Source Contributor";
+      document.getElementById('category').value = "Tech";
+      
+      // Add sample URLs
+      state.inputs = [
+        {
+          type: 'url',
+          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          title: 'Project Demo Video',
+          description: 'A walkthrough of my latest project',
+          platform: 'youtube'
+        },
+        {
+          type: 'url',
+          url: 'https://github.com/octocat/Hello-World',
+          title: 'Sample Repository',
+          description: 'A sample GitHub repository',
+          platform: 'github'
+        },
+        {
+          type: 'url',
+          url: 'https://www.linkedin.com/in/sample',
+          title: 'LinkedIn Profile',
+          description: '',
+          platform: 'linkedin'
+        },
+        {
+          type: 'text',
+          text: 'I am a passionate full-stack developer with 5+ years of experience building scalable web applications. I specialize in React, Node.js, and cloud infrastructure. I love contributing to open source projects and mentoring junior developers.',
+          title: 'About Me',
+          preview: 'I am a passionate full-stack developer...'
+        }
+      ];
+      
+      updateInputList();
+      showStatus('Sample data loaded! Click Generate to test.', 'success');
+    }
+
+    // Initialize
+    updateInputList();
+  </script>
+</body>
+</html>
