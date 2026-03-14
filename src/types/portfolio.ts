@@ -297,11 +297,21 @@ export interface GalleryContent {
 }
 
 export interface ExternalLinkContent {
-  platform: 'instagram' | 'linkedin' | 'tiktok' | 'twitter' | 'behance' | 'dribbble' | 'other';
+  platform: 'instagram' | 'linkedin' | 'tiktok' | 'twitter' | 'behance' | 'dribbble' | 'youtube' | 'other';
   url: string;
   title: string;
   description?: string | null;
   thumbnail_url?: string | null;
+  /** Resolved media embed (video / image / rich) */
+  media_embed?: {
+    embed_html: string;
+    media_type: 'video' | 'image' | 'rich';
+    width?: number;
+    height?: number;
+    author_name?: string;
+    author_url?: string;
+    duration_seconds?: number;
+  } | null;
   display: {
     icon: string;
     label: string;

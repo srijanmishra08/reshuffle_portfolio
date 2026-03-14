@@ -39,12 +39,14 @@ const SECTION_CONFIGS: SectionConfig[] = [
     order: 1,
     required: true,
     minBlocks: 1,
-    maxBlocks: 2,
-    preferredTypes: ['metric', 'media', 'expandable_text'],
+    maxBlocks: 3,
+    preferredTypes: ['media', 'metric', 'expandable_text'],
     contentFilter: (content, _category) => {
-      // Hook: Best performing content, intro text, or metrics
+      // Hook: Best performing content, intro text, metrics, or eye-catching media
       if (content.type === 'video') return true;
       if (content.source === 'youtube') return true;
+      // External links with video embeds go here too
+      if (content.media_embed?.media_type === 'video') return true;
       // Bio/intro text belongs in hook
       if (content.type === 'text') {
         const textType = content.extracted_data?.text_type;
@@ -58,13 +60,13 @@ const SECTION_CONFIGS: SectionConfig[] = [
     order: 2,
     required: true,
     minBlocks: 1,
-    maxBlocks: 3,
-    preferredTypes: ['expandable_text', 'external_link', 'metric'],
+    maxBlocks: 4,
+    preferredTypes: ['expandable_text', 'external_link', 'metric', 'media'],
     contentFilter: (content) => {
       // Credibility: Credentials, certifications, social profiles, testimonials
       if (content.type === 'pdf') return true;
-      // Only social profile links go to credibility (not work showcase links)
-      if (content.type === 'external_link') {
+      // Social profile links go to credibility
+      if (content.type === 'external_link' || content.media_embed) {
         const socialSources = ['github', 'linkedin', 'instagram', 'twitter', 'tiktok'];
         return socialSources.includes(content.source);
       }
@@ -77,20 +79,18 @@ const SECTION_CONFIGS: SectionConfig[] = [
     order: 3,
     required: true,
     minBlocks: 1,
-    maxBlocks: 6,
+    maxBlocks: 8,
     preferredTypes: ['gallery', 'scroll_container', 'media', 'comparison', 'external_link'],
     contentFilter: (content) => {
       // Work: Portfolio items, case studies, projects, work showcase links
       if (content.type === 'image') return true;
       if (content.type === 'video') return true;
       if (content.type === 'code') return true;
-      // Work showcase links (websites) go to work section
-      if (content.type === 'external_link') {
+      // External links with media (Behance, Dribbble, websites) go to work
+      if (content.type === 'external_link' || content.media_embed) {
         const socialSources = ['github', 'linkedin', 'instagram', 'twitter', 'tiktok'];
-        // If it's NOT a social profile, it's a work link
         return !socialSources.includes(content.source);
       }
-      // Don't put text in work section
       if (content.type === 'text') return false;
       if (content.type === 'pdf') return false;
       return content.scores.quality > 0.4;
@@ -101,13 +101,12 @@ const SECTION_CONFIGS: SectionConfig[] = [
     order: 4,
     required: false,
     minBlocks: 0,
-    maxBlocks: 2,
-    preferredTypes: ['timeline', 'expandable_text', 'hotspot_media'],
+    maxBlocks: 3,
+    preferredTypes: ['timeline', 'expandable_text', 'media', 'hotspot_media'],
     contentFilter: (content) => {
-      // Process: How they work, methodology, about sections
+      // Process: How they work, methodology, about sections — can include media
       if (content.type === 'text') {
         const textType = content.extracted_data?.text_type;
-        // About and general descriptions go here
         if (textType === 'about' || textType === 'description' || textType === 'general') return true;
       }
       if (content.type === 'pdf' && !content.extracted_data?.is_resume) return true;
@@ -216,9 +215,20 @@ function selectBlockType(
     return 'expandable_text';
   }
   
-  // External links should stay as external_link
+  // External links WITH media embeds should be rendered as external_link
+  // (the block builder will include the embed_html)
+  if (content.type === 'external_link' && content.media_embed) {
+    return 'external_link';
+  }
+  
+  // External links without embeds stay as external_link
   if (content.type === 'external_link') {
     return 'external_link';
+  }
+  
+  // Video content from external links (resolved to video type) → media block
+  if (content.type === 'video' && content.media_embed?.media_type === 'video') {
+    return 'media';
   }
   
   // GitHub profiles should be external_link with rich preview
@@ -228,6 +238,10 @@ function selectBlockType(
   
   // For hook section with media content, use category-specific type
   if (sectionId === 'hook') {
+    // But if we have video/image content, prefer media over category default
+    if (content.type === 'video' || content.type === 'image') {
+      return 'media';
+    }
     return CATEGORY_HOOK_TYPES[category];
   }
   

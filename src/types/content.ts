@@ -47,6 +47,33 @@ export interface RawInput {
 }
 
 // ============================================
+// RESOLVED MEDIA EMBED
+// ============================================
+
+export interface MediaEmbed {
+  /** Embeddable HTML (iframe / video / img tag) */
+  embed_html: string;
+  /** Direct thumbnail / preview image */
+  thumbnail_url: string;
+  /** Original URL on the platform */
+  platform_url: string;
+  /** Human-readable platform name */
+  platform_name: string;
+  /** 'video' | 'image' | 'rich' */
+  media_type: 'video' | 'image' | 'rich';
+  /** Embed width hint */
+  width?: number;
+  /** Embed height hint */
+  height?: number;
+  /** Author / channel name */
+  author_name?: string;
+  /** Author link */
+  author_url?: string;
+  /** Duration in seconds (video only) */
+  duration_seconds?: number;
+}
+
+// ============================================
 // NORMALIZED CONTENT
 // ============================================
 
@@ -59,6 +86,8 @@ export interface NormalizedContent {
   title: string;
   description: string;
   extracted_data?: ExtractedData;
+  /** Resolved embed for any URL-based content */
+  media_embed?: MediaEmbed;
   created_at: string;
 }
 
@@ -121,8 +150,12 @@ export interface ExtractedData {
   // Video
   size_bytes?: number;
   
-  // External Link
+  // External Link / Media
   platform?: string;
+  embed_html?: string;
+  platform_url?: string;
+  platform_name?: string;
+  media_type?: string;
   
   // Text
   text_type?: 'bio' | 'intro' | 'about' | 'testimonial' | 'description' | 'general';

@@ -1,6 +1,14 @@
 node_modules/
 dist/
 uploads/
+downloads/videos/*
+downloads/temp/*
+downloads/thumbnails/*
+downloads/metadata/*
+!downloads/videos/.gitkeep
+!downloads/temp/.gitkeep
+!downloads/thumbnails/.gitkeep
+!downloads/metadata/.gitkeep
 .env
 *.log
 .DS_Store

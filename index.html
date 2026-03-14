@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Builder — Reshuffle</title>
+  <meta name="description" content="Build a professional portfolio reel from your content. Paste links from YouTube, Instagram, X, LinkedIn, Behance — we do the rest.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--bg-soft:#0A0A0A;--bg-card:#111;--bg-hover:#1A1A1A;
+  --border:#222;--border-light:#333;
+  --orange:#FF6B35;--orange-light:#FF8C5A;--orange-dim:rgba(255,107,53,.12);--orange-glow:rgba(255,107,53,.3);
+  --green:#34C759;--green-dim:rgba(52,199,89,.12);
+  --red:#FF453A;--red-dim:rgba(255,69,58,.12);
+  --blue:#5AC8FA;--purple:#BF5AF2;
+  --text:#FFF;--text2:#AAA;--text3:#666;
+  --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
+  --radius:12px;--radius-sm:8px;--ease:.2s ease;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--orange);text-decoration:none}a:hover{color:var(--orange-light)}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:var(--font);outline:none}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:var(--bg-soft);position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand-icon{width:32px;height:32px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff}
+.brand-name{font-size:15px;font-weight:600;color:var(--text)}
+.brand-name span{color:var(--text3);font-weight:400;font-size:11px;display:block;margin-top:-2px}
+.header-actions{display:flex;gap:8px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all var(--ease);white-space:nowrap}
+.btn svg{width:15px;height:15px;flex-shrink:0}
+.btn-primary{background:var(--orange);color:#fff}.btn-primary:hover{background:var(--orange-light);box-shadow:0 0 20px var(--orange-glow)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn-secondary{background:var(--border);color:var(--text)}.btn-secondary:hover{background:var(--border-light)}
+.btn-ghost{background:transparent;color:var(--text2)}.btn-ghost:hover{background:var(--bg-hover);color:var(--text)}
+.btn-danger{background:var(--red-dim);color:var(--red)}.btn-danger:hover{opacity:.8}
+.btn-sm{padding:7px 12px;font-size:12px}
+
+/* LAYOUT */
+.workspace{display:grid;grid-template-columns:440px 1fr;min-height:calc(100vh - 53px)}
+@media(max-width:960px){.workspace{grid-template-columns:1fr}.preview-panel{display:none}.preview-panel.mobile-show{display:flex;position:fixed;inset:0;z-index:200;background:var(--bg-soft)}}
+
+/* EDITOR */
+.editor{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100vh - 53px)}
+.editor-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg-soft);position:sticky;top:0;z-index:10;overflow-x:auto}
+.tab-btn{padding:11px 16px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all var(--ease);white-space:nowrap;background:none}
+.tab-btn:hover{color:var(--text2)}.tab-btn.active{color:var(--orange);border-bottom-color:var(--orange)}
+.editor-body{padding:20px;flex:1;overflow-y:auto}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* FORM */
+.fg{margin-bottom:16px}
+.fl{font-size:11px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
+.fi,.fs,.ft{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;transition:border-color var(--ease)}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--orange)}
+.ft{resize:vertical;min-height:80px}
+.fs{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.fs option{background:var(--bg-card)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fhint{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* SECTIONS */
+.sec-title{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.sec-title .count{font-size:10px;color:var(--text3);background:var(--border);padding:2px 8px;border-radius:8px}
+
+/* ITEM CARDS */
+.item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;transition:border-color var(--ease)}
+.item:hover{border-color:var(--border-light)}
+.item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.item-title{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.item-actions{display:flex;gap:2px;flex-shrink:0}
+.item-desc{font-size:11px;color:var(--text3);margin-bottom:6px}
+.item-tags{display:flex;gap:5px;flex-wrap:wrap}
+.item-tag{font-size:9px;padding:2px 7px;border-radius:4px;background:var(--orange-dim);color:var(--orange);font-weight:500}
+.item-platform{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500;display:inline-flex;align-items:center;gap:3px}
+.item-embed{margin-top:6px;border-radius:6px;overflow:hidden;background:var(--bg);max-height:120px;overflow:hidden}
+.item-embed img{width:100%;height:100%;object-fit:cover}
+
+/* ADD CARD */
+.add-card{border:1px dashed var(--border-light);display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;color:var(--text3);cursor:pointer;font-size:12px;background:transparent;width:100%;border-radius:var(--radius-sm);transition:all var(--ease)}
+.add-card:hover{border-color:var(--orange);color:var(--orange)}
+.add-card svg{width:14px;height:14px}
+
+/* RESOLVE STATUS */
+.resolve-status{display:flex;align-items:center;gap:6px;padding:8px 10px;margin-top:6px;border-radius:6px;font-size:11px}
+.resolve-status.loading{background:rgba(90,200,250,.1);color:var(--blue)}
+.resolve-status.success{background:var(--green-dim);color:var(--green)}
+.resolve-status.error{background:var(--red-dim);color:var(--red)}
+.spinner{width:12px;height:12px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PREVIEW PANEL */
+.preview-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-soft);overflow:hidden;padding:24px;gap:16px;max-height:calc(100vh - 53px)}
+.preview-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3)}
+.phone-wrap{position:relative}
+.phone-frame{position:relative;width:300px;height:650px;background:#000;border-radius:44px;overflow:hidden;box-shadow:0 0 0 3px #222,0 0 0 5px #111,0 40px 80px rgba(0,0,0,.5)}
+.phone-notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:100px;height:28px;background:#000;border-radius:14px;z-index:60}
+.phone-status{position:absolute;top:10px;left:24px;right:24px;display:flex;justify-content:space-between;align-items:center;z-index:55;font-size:12px;font-weight:600;color:#fff;pointer-events:none}
+.phone-status-r{display:flex;gap:4px;align-items:center}
+.reel{position:absolute;inset:0;overflow:hidden;background:#000}
+
+/* REEL PROGRESS & CHROME */
+.reel-progress{position:absolute;top:42px;left:12px;right:12px;display:flex;gap:3px;z-index:50}
+.reel-seg{flex:1;height:2.5px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
+.reel-seg-fill{height:100%;width:0%;background:#fff;border-radius:2px;transition:none}
+.reel-seg.done .reel-seg-fill{width:100%}
+.reel-seg.active .reel-seg-fill{transition:width linear}
+.reel-header{position:absolute;top:52px;left:12px;right:12px;display:flex;align-items:center;gap:10px;z-index:50}
+.reel-avatar{width:32px;height:32px;border-radius:50%;border:2px solid var(--orange);background:var(--orange-dim);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--orange);overflow:hidden;flex-shrink:0}
+.reel-avatar img{width:100%;height:100%;object-fit:cover}
+.reel-user-name{font-size:12px;font-weight:600;color:#fff}
+.reel-user-cat{font-size:10px;color:rgba(255,255,255,.5)}
+
+.reel-slides{position:absolute;inset:0}
+.reel-slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 20px 70px;opacity:0;visibility:hidden;transition:opacity .5s ease,visibility .5s ease}
+.reel-slide.active{opacity:1;visibility:visible}
+.reel-slide-bg{position:absolute;inset:0;z-index:0}
+.reel-slide-bg-img{width:100%;height:100%;object-fit:cover;filter:brightness(.35) saturate(1.2)}
+.reel-slide-bg-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.4) saturate(1.15)}
+.reel-slide-bg-gradient{position:absolute;inset:0}
+.reel-slide-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,.1) 35%,rgba(0,0,0,.3) 100%);z-index:1}
+.reel-slide-content{position:relative;z-index:2;display:flex;flex-direction:column;gap:10px}
+
+.reel-touch{position:absolute;top:90px;bottom:60px;z-index:40;cursor:pointer}
+.reel-touch-l{left:0;width:35%}.reel-touch-r{right:0;width:65%}
+.reel-nav{position:absolute;bottom:16px;left:12px;right:12px;display:flex;justify-content:center;gap:6px;z-index:50}
+.reel-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);transition:all .3s}
+.reel-dot.active{background:#fff;width:18px;border-radius:3px}
+
+/* SLIDE ELEMENTS */
+.s-visual{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;width:85%;pointer-events:none}
+.s-avatar{width:72px;height:72px;border-radius:50%;border:3px solid var(--orange);background:var(--orange-dim);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--orange);overflow:hidden;opacity:0;transform:scale(.5)}
+.s-avatar img{width:100%;height:100%;object-fit:cover}
+.s-heading{font-size:22px;font-weight:700;color:#fff;line-height:1.2;opacity:0;transform:translateY(12px);white-space:pre-line}
+.s-heading.large{font-size:28px}
+.s-sub{font-size:13px;color:var(--orange);font-weight:500;opacity:0;transform:translateY(8px)}
+.s-badge{display:inline-block;font-size:9px;padding:3px 10px;border-radius:10px;background:rgba(255,107,53,.2);color:var(--orange);font-weight:600;text-transform:uppercase;letter-spacing:.06em;opacity:0;transform:scale(.7)}
+.s-caption{font-size:13px;color:rgba(255,255,255,.85);line-height:1.55;min-height:20px}
+.s-caption.italic{font-style:italic}
+.s-caption .cursor{display:inline-block;width:2px;height:14px;background:var(--orange);margin-left:2px;animation:blink .6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.s-tag{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--orange);font-weight:600;opacity:0;transform:translateY(8px)}
+.s-metric{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transform:translateY(12px)}
+.s-metric-val{font-size:40px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.s-metric-label{font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em}
+.s-skill{opacity:0;transform:translateX(-20px)}
+.s-skill-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.s-skill-name{font-size:12px;font-weight:500;color:#fff}
+.s-skill-pct{font-size:11px;color:rgba(255,255,255,.4)}
+.s-skill-track{height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.s-skill-fill{height:100%;background:var(--orange);border-radius:2px;width:0%;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.s-pill{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:12px;font-weight:500;text-decoration:none;opacity:0;transform:translateY(8px);transition:background .2s;pointer-events:auto}
+.s-pill:hover{background:rgba(255,255,255,.15);color:#fff}
+.s-pill-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.s-embed-mini{border-radius:8px;overflow:hidden;max-height:140px;opacity:0;transform:translateY(8px);pointer-events:auto}
+.s-embed-mini img{width:100%;object-fit:cover}
+.s-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:var(--orange);color:#fff;border-radius:14px;font-size:14px;font-weight:600;text-decoration:none;opacity:0;transform:translateY(10px);transition:all .2s;pointer-events:auto}
+.s-cta:hover{background:var(--orange-light);color:#fff;box-shadow:0 0 30px var(--orange-glow)}
+.s-quote{font-size:48px;color:var(--orange);opacity:0;transform:scale(.5);line-height:1}
+.s-footer{font-size:10px;color:rgba(255,255,255,.3);text-align:center;opacity:0}
+
+/* ANIMATIONS */
+.anim-fade-up{animation:fadeUp .6s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.anim-scale-in{animation:scaleIn .5s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes scaleIn{to{opacity:1;transform:scale(1)}}
+.anim-pop-in{animation:popIn .4s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes popIn{to{opacity:1;transform:scale(1) translateY(0)}}
+.anim-slide-right{animation:slideRight .5s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes slideRight{to{opacity:1;transform:translateX(0)}}
+.anim-fade-in{animation:fadeIn .6s ease forwards}
+@keyframes fadeIn{to{opacity:1}}
+.anim-pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,.4)}50%{box-shadow:0 0 0 12px rgba(255,107,53,0)}}
+.ken-burns{animation:kenBurns 8s ease-in-out forwards}
+@keyframes kenBurns{from{transform:scale(1)}to{transform:scale(1.08)}}
+
+.reel-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:30px;text-align:center;z-index:10}
+.reel-empty-icon{font-size:36px;opacity:.3}
+.reel-empty-text{font-size:13px;color:rgba(255,255,255,.4);line-height:1.5}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:all .2s}
+.modal-bg.show{opacity:1;visibility:visible}
+.modal{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;transform:scale(.95) translateY(10px);transition:transform .2s}
+.modal-bg.show .modal{transform:scale(1) translateY(0)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border)}
+.modal-hd h3{font-size:16px;font-weight:600}
+.modal-close{background:none;color:var(--text3);padding:4px}.modal-close:hover{color:var(--text)}
+.modal-close svg{width:18px;height:18px}
+.modal-bd{padding:18px 20px}
+.modal-ft{padding:14px 20px 18px;display:flex;justify-content:flex-end;gap:8px}
+
+/* TOAST */
+.toast-box{position:fixed;bottom:20px;right:20px;z-index:400;display:flex;flex-direction:column-reverse;gap:8px}
+.toast{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--text);box-shadow:0 8px 30px rgba(0,0,0,.4);animation:toastIn .3s ease;display:flex;align-items:center;gap:8px}
+.toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* SHARE */
+.share-box{display:flex;gap:8px;margin-top:10px}
+.share-input{flex:1;padding:9px 11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;font-family:monospace}
+
+/* GENERATE BAR */
+.gen-bar{padding:16px 20px;border-top:1px solid var(--border);background:var(--bg-soft);position:sticky;bottom:0}
+.gen-bar .btn{width:100%;justify-content:center;padding:12px;font-size:14px}
+.gen-bar .gen-info{text-align:center;font-size:10px;color:var(--text3);margin-top:6px}
+.gen-bar .gen-progress{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px}
+.gen-bar .gen-progress-fill{height:100%;background:var(--orange);border-radius:2px;width:0%;transition:width .3s}
+
+/* MOBILE */
+.mobile-preview-btn{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:150;padding:12px 24px}
+@media(max-width:960px){.mobile-preview-btn{display:inline-flex}}
+.mobile-close-btn{display:none;position:fixed;top:14px;right:14px;z-index:210}
+@media(max-width:960px){.preview-panel.mobile-show .mobile-close-btn{display:inline-flex}}
+@media(max-width:960px){.phone-frame{width:260px;height:563px;border-radius:38px}}
+
+.preview-controls{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <a href="../" class="brand">
+    <div class="brand-icon">R</div>
+    <div class="brand-name">Reshuffle<span>Portfolio Builder</span></div>
+  </a>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="resetBtn" title="Reset">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg>
+      Reset
+    </button>
+    <button class="btn btn-secondary btn-sm" id="shareBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Share
+    </button>
+  </div>
+</header>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+  <!-- Editor Panel -->
+  <div class="editor">
+    <div class="editor-tabs">
+      <button class="tab-btn active" data-tab="profile">Profile</button>
+      <button class="tab-btn" data-tab="projects">Projects</button>
+      <button class="tab-btn" data-tab="skills">Skills</button>
+      <button class="tab-btn" data-tab="testimonials">Testimonials</button>
+    </div>
+    <div class="editor-body">
+
+      <!-- PROFILE -->
+      <div class="tab-panel active" id="tab-profile">
+        <div class="fg"><label class="fl">Full Name *</label><input class="fi" id="pf-name" placeholder="e.g. Alex Chen"></div>
+        <div class="fg"><label class="fl">Title / Role *</label><input class="fi" id="pf-role" placeholder="e.g. Full-Stack Developer"></div>
+        <div class="fg"><label class="fl">Category</label>
+          <select class="fs" id="pf-category">
+            <option value="Tech">Tech</option><option value="Design">Design</option><option value="Marketing">Marketing</option>
+            <option value="Finance">Finance</option><option value="Entertainment">Entertainment</option><option value="Legal">Legal</option>
+            <option value="Influencers">Influencers</option><option value="Business">Business</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Bio</label><textarea class="ft" id="pf-bio" placeholder="Brief intro about you..."></textarea></div>
+        <div class="fg"><label class="fl">Avatar URL</label><input class="fi" id="pf-avatar" placeholder="https://example.com/photo.jpg"><div class="fhint">Direct link to your profile photo</div></div>
+        <div class="fg"><label class="fl">Contact Email</label><input class="fi" id="pf-email" type="email" placeholder="hello@example.com"></div>
+        <div class="fg"><label class="fl">Profile Intro Video</label><input class="fi" id="pf-intro-video" placeholder="YouTube, Instagram, TikTok… URL — plays behind your intro &amp; skills slides"><div class="fhint">Video plays as the background on your name and skills slides</div><div id="pf-video-status"></div></div>
+      </div>
+
+      <!-- PROJECTS -->
+      <div class="tab-panel" id="tab-projects">
+        <div class="sec-title">Projects <span class="count" id="projects-count">0</span></div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Add your projects — paste a video link, give it a title and description. Videos download automatically and play as backgrounds in your reel.</p>
+        <div id="projects-list"></div>
+        <button class="add-card" id="addProjectBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Project
+        </button>
+        <div id="dl-active" style="margin-top:12px"></div>
+      </div>
+
+      <!-- SKILLS -->
+      <div class="tab-panel" id="tab-skills">
+        <div class="sec-title">Skills <span class="count" id="skills-count">0</span></div>
+        <div id="skills-list"></div>
+        <button class="add-card" id="addSkillBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Skill
+        </button>
+      </div>
+
+      <!-- TESTIMONIALS -->
+      <div class="tab-panel" id="tab-testimonials">
+        <div class="sec-title">Testimonials <span class="count" id="testimonials-count">0</span></div>
+        <div id="testimonials-list"></div>
+        <button class="add-card" id="addTestimonialBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Testimonial
+        </button>
+      </div>
+    </div>
+
+    <!-- GENERATE BAR -->
+    <div class="gen-bar">
+      <button class="btn btn-primary" id="generateBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
+        Generate Portfolio
+      </button>
+      <div class="gen-info" id="genInfo">Add your details above, then generate your portfolio reel</div>
+      <div class="gen-progress" id="genProgress" style="display:none"><div class="gen-progress-fill" id="genFill"></div></div>
+    </div>
+  </div>
+
+  <!-- Preview Panel -->
+  <div class="preview-panel" id="previewPanel">
+    <button class="btn btn-ghost mobile-close-btn" id="mobileCloseBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="preview-label">Live Reel Preview</div>
+    <div class="phone-wrap">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-status"><span>9:41</span><div class="phone-status-r">
+          <svg width="15" height="11" viewBox="0 0 15 11" fill="#fff"><rect x="0" y="5" width="3" height="6" rx="1"/><rect x="4" y="3" width="3" height="8" rx="1"/><rect x="8" y="1" width="3" height="10" rx="1"/><rect x="12" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="#fff" stroke-width="1.2"><rect x=".5" y=".5" width="13" height="10" rx="2"/><rect x="14" y="3" width="1.5" height="5" rx=".5" fill="#fff"/><rect x="2" y="2" width="7" height="7" rx="1" fill="#fff"/></svg>
+        </div></div>
+        <div class="reel" id="reelPlayer"></div>
+      </div>
+    </div>
+    <div class="preview-controls">
+      <button class="btn btn-ghost btn-sm" id="reelPrevBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button class="btn btn-secondary btn-sm" id="playPauseBtn">
+        <svg id="pauseIco" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        <svg id="playIco" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="display:none"><polygon points="5,3 19,12 5,21"/></svg>
+      </button>
+      <button class="btn btn-ghost btn-sm" id="reelNextBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <button class="btn btn-ghost btn-sm" id="reelRestartBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile preview toggle -->
+<button class="btn btn-primary mobile-preview-btn" id="mobilePreviewBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="5,3 19,12 5,21"/></svg>
+  Preview Reel
+</button>
+
+<!-- Modal -->
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalEl"></div></div>
+
+<!-- Toasts -->
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   PORTFOLIO BUILDER — Connected to Portfolio Engine API
+   ══════════════════════════════════════════════════════════════ */
+
+const API = location.origin;
+const STORE_KEY = 'reshuffle_portfolio_v2';
+
+// === DATA LAYER ===
+function defaults(){return{profile:{name:'',role:'',category:'Tech',bio:'',avatar:'',email:'',intro_video_url:'',intro_video_file_id:null,intro_video_status:null,intro_video_job_id:null},projects:[],skills:[],testimonials:[],nextId:1,lastPortfolio:null,lastHtml:null}}
+function load(){try{const r=localStorage.getItem(STORE_KEY);if(r){const d={...defaults(),...JSON.parse(r)};d.profile={...defaults().profile,...(d.profile||{})};if(!d.projects){d.projects=[];if(d.links)d.links.forEach(l=>d.projects.push({id:l.id,url:l.url,title:l.label||l.title||'',description:l.desc||'',platform:l.platform,thumbnail_url:l.thumbnail_url,download_status:l.url?.startsWith('/api/downloads/files/')?'complete':null,file_id:l.url?.match(/files\/([^/]+)/)?.[1]||null}));if(d.texts)d.texts.forEach(t=>d.projects.push({id:d.nextId++,url:'',title:t.title||'',description:t.text||''}))}return d}}catch(e){}return defaults()}
+function save(){localStorage.setItem(STORE_KEY,JSON.stringify(data))}
+let data=load();
+let saveTimer;
+function autoSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{readProfile();save();buildPreviewReel()},400)}
+function readProfile(){
+  data.profile.name=$('pf-name').value.trim();data.profile.role=$('pf-role').value.trim();
+  data.profile.category=$('pf-category').value;data.profile.bio=$('pf-bio').value.trim();
+  data.profile.avatar=$('pf-avatar').value.trim();data.profile.email=$('pf-email').value.trim();
+}
+function uid(){return data.nextId++}
+
+// === DOM UTILS ===
+function $(id){return document.getElementById(id)}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function escA(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
+// === TABS ===
+function switchTab(t){document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(e=>e.classList.remove('active'));document.querySelector(`.tab-btn[data-tab="${t}"]`).classList.add('active');$(`tab-${t}`).classList.add('active')}
+
+// === PLATFORM DETECTION (client-side for editor UX) ===
+const PLATFORMS={youtube:/youtu(\.be|be\.com)/i,instagram:/instagram\.com/i,tiktok:/tiktok\.com/i,twitter:/(twitter|x)\.com/i,linkedin:/linkedin\.com/i,behance:/behance\.net/i,dribbble:/dribbble\.com/i,vimeo:/vimeo\.com/i,github:/github\.com/i,drive:/drive\.google\.com/i,spotify:/spotify\.com/i,figma:/figma\.com/i,pinterest:/pinterest\.com/i,medium:/medium\.com/i};
+function detectPlat(url){if(!url)return'website';for(const[k,r]of Object.entries(PLATFORMS))if(r.test(url))return k;return'website'}
+const PLAT_COLORS={youtube:'#FF0000',instagram:'#E4405F',tiktok:'#000',twitter:'#1D9BF0',linkedin:'#0077B5',behance:'#1769FF',dribbble:'#EA4C89',vimeo:'#1AB7EA',github:'#333',drive:'#4285F4',spotify:'#1DB954',figma:'#F24E1E',pinterest:'#E60023',medium:'#000',website:'rgba(255,107,53,.3)'};
+const PLAT_NAMES={youtube:'YouTube',instagram:'Instagram',tiktok:'TikTok',twitter:'X / Twitter',linkedin:'LinkedIn',behance:'Behance',dribbble:'Dribbble',vimeo:'Vimeo',github:'GitHub',drive:'Google Drive',spotify:'Spotify',figma:'Figma',pinterest:'Pinterest',medium:'Medium',website:'Website'};
+const PLAT_EMOJI={youtube:'\u25B6',instagram:'\uD83D\uDCF7',tiktok:'\u266A',twitter:'\uD835\uDD4F',linkedin:'\uD83C\uDF10',behance:'Be',dribbble:'\u25CF',vimeo:'\u25B6',github:'\u2B24',drive:'\uD83D\uDCC1',spotify:'\u266B',figma:'\u25C8',pinterest:'\uD83D\uDCCC',medium:'M',website:'\uD83D\uDD17'};
+
+// === BUTTON HELPERS ===
+function editBtn(fn){return `<button class="btn btn-ghost btn-sm" style="padding:5px" onclick="${fn}" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`}
+function delBtn(fn){return `<button class="btn btn-ghost btn-sm" style="padding:5px" onclick="${fn}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`}
+
+// === LIST RENDERERS ===
+function renderProjects(){
+  const el=$('projects-list');$('projects-count').textContent=data.projects.length;
+  if(!data.projects.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Add projects with video links — videos play as backgrounds in your reel.</div>';return}
+  el.innerHTML=data.projects.map(p=>{
+    const plat=p.platform||detectPlat(p.url);const col=PLAT_COLORS[plat]||PLAT_COLORS.website;
+    let statusTag='';
+    if(p.download_status==='downloading'||p.download_status==='starting'||p.download_status==='queued'||p.download_status==='processing')statusTag='<span class="item-tag" style="background:rgba(90,200,250,.15);color:#5AC8FA">⏳ Downloading…</span>';
+    else if(p.download_status==='complete')statusTag='<span class="item-tag" style="background:rgba(52,199,89,.15);color:#34C759">✓ Ready</span>';
+    else if(p.download_status==='failed')statusTag='<span class="item-tag" style="background:rgba(255,69,58,.15);color:#FF453A">✗ Failed</span>';
+    else if(p.url&&!p.url.startsWith('/api/'))statusTag='<span class="item-tag">Pending</span>';
+    let thumbHtml='';
+    if(p.thumbnail_url)thumbHtml=`<div class="item-embed"><img src="${escA(p.thumbnail_url)}" alt="" onerror="this.parentElement.style.display='none'"></div>`;
+    return `<div class="item"><div class="item-head"><div class="item-title">${esc(p.title||'Untitled')}</div><div class="item-actions">${editBtn('openProjectModal('+p.id+')')}${delBtn('deleteProject('+p.id+')')}</div></div>${p.description?`<div class="item-desc">${esc(p.description.substring(0,100))}${p.description.length>100?'...':''}</div>`:''}<div style="font-size:10px;color:var(--text3);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.url||'No video link')}</div><div class="item-tags"><span class="item-platform" style="background:${col}20;color:${col}">${PLAT_EMOJI[plat]||'\uD83D\uDD17'} ${PLAT_NAMES[plat]||plat}</span>${statusTag}</div>${thumbHtml}</div>`;
+  }).join('');
+}
+
+function renderSkills(){
+  const el=$('skills-list');$('skills-count').textContent=data.skills.length;
+  if(!data.skills.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Add skills to show animated bars in your reel.</div>';return}
+  el.innerHTML=data.skills.map(s=>`<div class="item"><div class="item-head"><div class="item-title">${esc(s.name)}</div><div class="item-actions">${editBtn('openSkillModal('+s.id+')')}${delBtn('deleteSkill('+s.id+')')}</div></div><div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${s.level}%;background:var(--orange);border-radius:2px"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">${s.level}%</div></div>`).join('');
+}
+
+function renderTestimonials(){
+  const el=$('testimonials-list');$('testimonials-count').textContent=data.testimonials.length;
+  if(!data.testimonials.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Add client quotes with optional photos or videos — media plays as background in the "What Clients Say" slide.</div>';return}
+  el.innerHTML=data.testimonials.map(t=>{
+    let mediaHtml='';
+    if(t.media_status==='complete'&&t.media_file_id)mediaHtml=`<div class="item-embed"><img src="/api/downloads/files/${escA(t.media_file_id)}/thumbnail" alt="" onerror="this.parentElement.style.display='none'"></div>`;
+    else if(t.media_status==='complete'&&t.media_url)mediaHtml=`<div class="item-embed"><img src="${escA(t.media_url)}" alt="" onerror="this.parentElement.style.display='none'"></div>`;
+    else if(t.media_status==='downloading'||t.media_status==='starting'||t.media_status==='queued'||t.media_status==='processing')mediaHtml='<div style="font-size:10px;color:#5AC8FA;margin-top:4px">&#9203; Downloading media…</div>';
+    else if(t.media_status==='failed')mediaHtml='<div style="font-size:10px;color:var(--red);margin-top:4px">&#10007; Media download failed</div>';
+    return `<div class="item"><div class="item-head"><div class="item-title">${esc(t.author)}</div><div class="item-actions">${editBtn('openTestimonialModal('+t.id+')')}${delBtn('deleteTestimonial('+t.id+')')}</div></div><div class="item-desc">\u201C${esc((t.text||'').substring(0,80))}${(t.text||'').length>80?'\u2026':''}\u201D</div>${mediaHtml}</div>`;
+  }).join('');
+}
+
+// === MODALS ===
+function openModal(h){$('modalEl').innerHTML=h;$('modalBg').classList.add('show')}
+function closeModal(){$('modalBg').classList.remove('show')}
+$('modalBg').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+function closeX(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'}
+
+// -- PROJECT MODAL (video URL + title + description, auto-download) --
+function openProjectModal(eid){
+  const p=eid?data.projects.find(x=>x.id===eid):null;
+  openModal(`<div class="modal-hd"><h3>${p?'Edit':'Add'} Project</h3><button class="modal-close" onclick="closeModal()">${closeX()}</button></div><div class="modal-bd"><div class="fg"><label class="fl">Project Title *</label><input class="fi" id="m-p-title" value="${p?escA(p.title||''):''}" placeholder="e.g. My App Demo"></div><div class="fg"><label class="fl">Video URL</label><input class="fi" id="m-p-url" value="${p?escA(p.url||''):''}" placeholder="https://youtube.com/watch?v=... or any video URL"><div class="fhint">YouTube, Instagram, TikTok, X, Vimeo, and 1000+ sites. Video downloads automatically.</div></div><div class="fg"><label class="fl">Description</label><textarea class="ft" id="m-p-desc" placeholder="Brief details about this project...">${p?esc(p.description||''):''}</textarea></div><div id="m-p-resolve"></div></div><div class="modal-ft"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveProject(${eid||'null'})">${p?'Save':'Add'}</button></div>`);
+  if(p&&p.url)resolveURLPreview(p.url);
+  setTimeout(()=>$('m-p-title')?.focus(),100);
+  $('m-p-url').addEventListener('blur',function(){if(this.value.trim())resolveURLPreview(this.value.trim())});
+}
+async function resolveURLPreview(url){
+  const box=$('m-p-resolve');if(!box)return;
+  box.innerHTML='<div class="resolve-status loading"><div class="spinner"></div> Detecting platform & resolving media\u2026</div>';
+  try{
+    const res=await fetch(API+'/api/content/resolve-media',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d=await res.json();
+    if(d.success&&d.media){
+      const m=d.media;
+      box.innerHTML=`<div class="resolve-status success">\u2713 ${esc(m.platform_name||m.platform||'Resolved')} \u2014 ${m.media_type||'link'}</div>${m.thumbnail_url?`<div class="item-embed" style="margin-top:8px"><img src="${escA(m.thumbnail_url)}" alt="" style="width:100%;border-radius:6px;max-height:160px;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>`:''}${m.title&&m.title!==url?`<div style="font-size:11px;color:var(--text2);margin-top:4px">${esc(m.title)}</div>`:''}`;
+      box.dataset.resolved=JSON.stringify(m);
+      const ti=$('m-p-title');if(ti&&!ti.value&&m.title)ti.value=m.title;
+    }else{
+      box.innerHTML=`<div class="resolve-status success">\u2713 Platform detected: ${esc(d.platform||detectPlat(url))}</div>`;
+      box.dataset.resolved='';
+    }
+  }catch(e){
+    box.innerHTML=`<div class="resolve-status error">\u26A0 Could not resolve \u2014 will try to download anyway</div>`;
+    box.dataset.resolved='';
+  }
+}
+function saveProject(eid){
+  const title=$('m-p-title').value.trim();
+  if(!title){toast('Enter a project title','error');return}
+  const url=$('m-p-url').value.trim();
+  const desc=$('m-p-desc').value.trim();
+  let resolved=null;try{resolved=JSON.parse($('m-p-resolve')?.dataset?.resolved||'null')}catch(e){}
+  const platform=resolved?.platform||detectPlat(url);
+  const o={url,title,description:desc,platform,thumbnail_url:resolved?.thumbnail_url||null,download_status:null,download_job_id:null,file_id:null};
+  let projId;
+  if(eid){const p=data.projects.find(x=>x.id===eid);if(p){Object.assign(p,o);projId=eid}}else{o.id=uid();projId=o.id;data.projects.push(o)}
+  closeModal();save();renderProjects();buildPreviewReel();toast(eid?'Updated':'Added','success');
+  if(url&&!url.startsWith('/api/'))autoDownloadForProject(projId,url);
+}
+function deleteProject(id){data.projects=data.projects.filter(p=>p.id!==id);save();renderProjects();buildPreviewReel()}
+
+// -- AUTO DOWNLOAD --
+async function autoDownloadForProject(projId,url){
+  const proj=data.projects.find(p=>p.id===projId);if(!proj)return;
+  proj.download_status='starting';save();renderProjects();
+  try{
+    const r=await fetch('/api/downloads/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,quality:'720p',format:'mp4'})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error?.message||'Download failed');
+    if(d.data.cached){
+      const f=d.data.file;
+      proj.download_status='complete';proj.file_id=f.id;
+      proj.thumbnail_url=proj.thumbnail_url||'/api/downloads/files/'+f.id+'/thumbnail';
+      save();renderProjects();buildPreviewReel();toast(proj.title+' — video ready!','success');return;
+    }
+    proj.download_status='downloading';proj.download_job_id=d.data.job.id;
+    save();renderProjects();startProjectPoll();
+  }catch(e){proj.download_status='failed';save();renderProjects();toast('Download failed: '+e.message,'error')}
+}
+let projectPollTimer=null;
+function startProjectPoll(){if(projectPollTimer)return;projectPollTimer=setInterval(pollProjectDownloads,2500);pollProjectDownloads()}
+async function pollProjectDownloads(){
+  const pendingProjects=data.projects.filter(p=>p.download_status==='downloading'||p.download_status==='starting'||p.download_status==='queued'||p.download_status==='processing');
+  const profilePending=data.profile.intro_video_status==='downloading'||data.profile.intro_video_status==='starting'||data.profile.intro_video_status==='queued'||data.profile.intro_video_status==='processing';
+  const pendingTestimonials=data.testimonials.filter(t=>t.media_status==='downloading'||t.media_status==='starting'||t.media_status==='queued'||t.media_status==='processing');
+  if(!pendingProjects.length&&!profilePending&&!pendingTestimonials.length){if(projectPollTimer){clearInterval(projectPollTimer);projectPollTimer=null}return}
+  try{
+    const r=await fetch('/api/downloads/jobs');const d=await r.json();if(!d.success)return;
+    const jobs=d.data.jobs;
+    let changed=false;
+    pendingProjects.forEach(proj=>{
+      const job=jobs.find(j=>j.id===proj.download_job_id);
+      if(!job)return;
+      if(job.status==='completed'&&proj.download_status!=='complete'){
+        proj.download_status='complete';proj.file_id=job.id;
+        proj.thumbnail_url=proj.thumbnail_url||'/api/downloads/files/'+job.id+'/thumbnail';
+        changed=true;toast(proj.title+' — video ready!','success');
+      }else if(job.status==='failed'){proj.download_status='failed';changed=true}
+      else if(job.status!==proj.download_status){proj.download_status=job.status;changed=true}
+    });
+    if(profilePending&&data.profile.intro_video_job_id){
+      const job=jobs.find(j=>j.id===data.profile.intro_video_job_id);
+      if(job){
+        if(job.status==='completed'&&data.profile.intro_video_status!=='complete'){
+          data.profile.intro_video_file_id=job.id;data.profile.intro_video_status='complete';
+          changed=true;toast('Intro video ready!','success');updateProfileVideoStatus();
+        }else if(job.status==='failed'){data.profile.intro_video_status='failed';changed=true;updateProfileVideoStatus()}
+        else if(job.status!==data.profile.intro_video_status){data.profile.intro_video_status=job.status;updateProfileVideoStatus()}
+      }
+    }
+    pendingTestimonials.forEach(t=>{
+      const job=jobs.find(j=>j.id===t.media_job_id);
+      if(!job)return;
+      if(job.status==='completed'&&t.media_status!=='complete'){
+        t.media_file_id=job.id;t.media_status='complete';changed=true;toast(t.author+' — media ready!','success');
+      }else if(job.status==='failed'){t.media_status='failed';changed=true}
+      else if(job.status!==t.media_status){t.media_status=job.status;changed=true}
+    });
+    if(changed){save();renderProjects();renderTestimonials();buildPreviewReel()}
+    renderActiveDownloads(jobs);
+  }catch(e){}
+}
+function renderActiveDownloads(jobs){
+  if(!jobs)return;
+  const active=jobs.filter(j=>j.status==='queued'||j.status==='downloading'||j.status==='processing');
+  const el=$('dl-active');if(!el)return;
+  if(!active.length){el.innerHTML='';return}
+  el.innerHTML=active.map(j=>{
+    const pct=j.progress?.percent||0;const title=j.metadata?.title||j.url;
+    const speed=j.progress?.speed||'';const eta=j.progress?.eta||'';
+    return `<div class="item" style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%">${esc(String(title).slice(0,50))}</span><span style="font-size:10px;color:var(--text3)">${Math.round(pct)}%${speed?' \u00B7 '+speed:''}${eta?' \u00B7 '+eta:''}</span></div><div style="background:var(--border);border-radius:3px;height:3px;overflow:hidden"><div style="background:var(--orange);height:100%;width:${Math.round(pct)}%;transition:width .3s"></div></div></div>`;
+  }).join('');
+}
+
+// -- SKILL MODAL --
+function openSkillModal(eid){const s=eid?data.skills.find(x=>x.id===eid):null;openModal(`<div class="modal-hd"><h3>${s?'Edit':'Add'} Skill</h3><button class="modal-close" onclick="closeModal()">${closeX()}</button></div><div class="modal-bd"><div class="fg"><label class="fl">Skill Name *</label><input class="fi" id="m-s-name" value="${s?escA(s.name):''}" placeholder="e.g. React"></div><div class="fg"><label class="fl">Proficiency: <strong id="m-s-val">${s?s.level:80}%</strong></label><input type="range" id="m-s-level" min="10" max="100" step="5" value="${s?s.level:80}" style="width:100%;accent-color:var(--orange);margin-top:8px" oninput="$('m-s-val').textContent=this.value+'%'"></div></div><div class="modal-ft"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveSkill(${eid||'null'})">${s?'Save':'Add'}</button></div>`);setTimeout(()=>$('m-s-name')?.focus(),100)}
+function saveSkill(eid){const n=$('m-s-name').value.trim();if(!n){toast('Enter skill name','error');return}const o={name:n,level:+$('m-s-level').value};if(eid){const s=data.skills.find(x=>x.id===eid);if(s)Object.assign(s,o)}else data.skills.push({...o,id:uid()});closeModal();save();renderSkills();buildPreviewReel();toast(eid?'Updated':'Added','success')}
+function deleteSkill(id){data.skills=data.skills.filter(s=>s.id!==id);save();renderSkills();buildPreviewReel()}
+
+// === PROFILE VIDEO HELPERS ===
+function isVideoPlatformUrl(url){return /youtu(\.be|be\.com)|instagram\.com|tiktok\.com|(?:twitter|x)\.com|linkedin\.com|vimeo\.com/i.test(url||'')}
+function updateProfileVideoStatus(){
+  const el=$('pf-video-status');if(!el)return;
+  const s=data.profile.intro_video_status;
+  if(s==='downloading'||s==='starting'||s==='queued'||s==='processing')el.innerHTML='<div class="resolve-status loading"><div class="spinner"></div> Downloading intro video…</div>';
+  else if(s==='complete')el.innerHTML='<div class="resolve-status success">&#10003; Intro video ready</div>';
+  else if(s==='failed')el.innerHTML='<div class="resolve-status error">&#10007; Download failed</div>';
+  else el.innerHTML='';
+}
+async function autoDownloadProfileVideo(url){
+  data.profile.intro_video_url=url;data.profile.intro_video_status='starting';save();updateProfileVideoStatus();
+  try{
+    const r=await fetch('/api/downloads/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,quality:'720p',format:'mp4'})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error?.message||'Download failed');
+    if(d.data.cached){
+      data.profile.intro_video_file_id=d.data.file.id;data.profile.intro_video_status='complete';
+      save();updateProfileVideoStatus();buildPreviewReel();toast('Intro video ready!','success');return;
+    }
+    data.profile.intro_video_job_id=d.data.job.id;data.profile.intro_video_status='downloading';
+    save();updateProfileVideoStatus();startProjectPoll();
+  }catch(e){data.profile.intro_video_status='failed';save();updateProfileVideoStatus();toast('Video download failed: '+e.message,'error')}
+}
+async function autoDownloadForTestimonial(tmId,url){
+  const t=data.testimonials.find(x=>x.id===tmId);if(!t)return;
+  if(!isVideoPlatformUrl(url)){t.media_status='complete';save();renderTestimonials();buildPreviewReel();return}
+  t.media_status='starting';save();renderTestimonials();
+  try{
+    const r=await fetch('/api/downloads/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,quality:'720p',format:'mp4'})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error?.message||'Download failed');
+    if(d.data.cached){
+      t.media_file_id=d.data.file.id;t.media_status='complete';
+      save();renderTestimonials();buildPreviewReel();toast(t.author+' — media ready!','success');return;
+    }
+    t.media_job_id=d.data.job.id;t.media_status='downloading';
+    save();renderTestimonials();startProjectPoll();
+  }catch(e){t.media_status='failed';save();renderTestimonials();toast('Media download failed: '+e.message,'error')}
+}
+
+// -- TESTIMONIAL MODAL --
+function openTestimonialModal(eid){const t=eid?data.testimonials.find(x=>x.id===eid):null;
+  let statusHtml='';
+  if(t?.media_status==='complete')statusHtml='<div class="resolve-status success" style="margin-top:6px">&#10003; Media ready</div>';
+  else if(t?.media_status==='downloading'||t?.media_status==='starting')statusHtml='<div class="resolve-status loading" style="margin-top:6px"><div class="spinner"></div> Downloading…</div>';
+  else if(t?.media_status==='failed')statusHtml='<div class="resolve-status error" style="margin-top:6px">&#10007; Download failed</div>';
+  openModal(`<div class="modal-hd"><h3>${t?'Edit':'Add'} Testimonial</h3><button class="modal-close" onclick="closeModal()">${closeX()}</button></div><div class="modal-bd"><div class="fg"><label class="fl">Quote *</label><textarea class="ft" id="m-tm-text" placeholder="What did the client say?">${t?esc(t.text||''):''}</textarea></div><div class="frow"><div class="fg"><label class="fl">Author *</label><input class="fi" id="m-tm-author" value="${t?escA(t.author):''}" placeholder="Jane Smith"></div><div class="fg"><label class="fl">Company</label><input class="fi" id="m-tm-co" value="${t?escA(t.company||''):''}" placeholder="Acme Corp"></div></div><div class="fg"><label class="fl">Background Media</label><input class="fi" id="m-tm-media" value="${t?escA(t.media_url||''):''}" placeholder="Image URL or video link (YouTube, Instagram, etc.)"><div class="fhint">Photo or video that plays as background in the \u201cWhat Clients Say\u201d slide</div>${statusHtml}</div></div><div class="modal-ft"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTestimonial(${eid||'null'})">${t?'Save':'Add'}</button></div>`);
+  setTimeout(()=>$('m-tm-text')?.focus(),100);
+}
+function saveTestimonial(eid){
+  const txt=$('m-tm-text').value.trim(),auth=$('m-tm-author').value.trim();
+  if(!txt||!auth){toast('Fill in quote and author','error');return}
+  const mediaUrl=$('m-tm-media').value.trim();
+  const o={text:txt,author:auth,company:$('m-tm-co').value.trim(),media_url:mediaUrl};
+  let tmId;
+  if(eid){const t=data.testimonials.find(x=>x.id===eid);if(t){const prevMedia=t.media_url;Object.assign(t,o);tmId=eid;if(mediaUrl&&mediaUrl!==prevMedia){t.media_file_id=null;t.media_status=null;t.media_job_id=null}}}
+  else{const newT={...o,id:uid(),media_file_id:null,media_status:null,media_job_id:null};data.testimonials.push(newT);tmId=newT.id}
+  closeModal();save();renderTestimonials();buildPreviewReel();toast(eid?'Updated':'Added','success');
+  if(mediaUrl){const t=data.testimonials.find(x=>x.id===tmId);if(t&&!t.media_file_id&&t.media_status!=='complete')autoDownloadForTestimonial(tmId,mediaUrl)}
+}
+function deleteTestimonial(id){data.testimonials=data.testimonials.filter(t=>t.id!==id);save();renderTestimonials();buildPreviewReel()}
+
+// ═══════════════════════════════════════════════
+//  GENERATE PORTFOLIO VIA API
+// ═══════════════════════════════════════════════
+let isGenerating=false;
+async function generatePortfolio(){
+  if(isGenerating)return;
+  readProfile();
+  const p=data.profile;
+  if(!p.name||!p.role){toast('Please fill in your name and role','error');return}
+  if(!data.projects.length&&!data.skills.length){toast('Add some content first','error');return}
+
+  isGenerating=true;
+  const btn=$('generateBtn');btn.disabled=true;
+  btn.innerHTML='<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Generating\u2026';
+  $('genInfo').textContent='Processing your content & resolving media\u2026';
+  $('genProgress').style.display='';$('genFill').style.width='20%';
+
+  try{
+    const payload={
+      user_id:'web_'+Date.now(),
+      category:p.category,
+      title:p.name,
+      subtitle:p.role,
+      urls:data.projects.filter(p=>p.url).map(p=>({url:p.file_id?'/api/downloads/files/'+p.file_id:p.url,title:p.title||undefined,description:p.description||undefined})),
+      texts:[
+        ...(p.bio?[{text:p.bio,title:'About',description:p.role}]:[]),
+        ...data.projects.map(p=>({text:p.description||p.title,title:p.title||undefined})),
+        ...data.skills.map(s=>({text:`Skill: ${s.name} \u2014 Proficiency ${s.level}%`,title:s.name})),
+        ...data.testimonials.map(t=>({text:`"${t.text}" \u2014 ${t.author}${t.company?', '+t.company:''}`,title:'Testimonial from '+t.author}))
+      ]
+    };
+
+    $('genFill').style.width='50%';
+
+    const res=await fetch(API+'/api/portfolios/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
+    const result=await res.json();
+    $('genFill').style.width='90%';
+
+    if(!result.success)throw new Error(result.error?.message||result.error||'Generation failed');
+
+    data.lastPortfolio=result.data.portfolio;
+    data.lastHtml=result.data.html;
+    save();
+
+    $('genFill').style.width='100%';
+    $('genInfo').textContent=`\u2713 Generated ${result.processing_summary.sections_generated} sections, ${result.processing_summary.blocks_generated} blocks, ${result.processing_summary.media_embeds_resolved} media embeds`;
+
+    toast('Portfolio generated!','success');
+
+    // Store HTML for view.html and open it
+    try{sessionStorage.setItem('reshuffle_ssr_html',data.lastHtml)}catch(e){}
+    window.open('view.html','_blank');
+
+  }catch(e){
+    console.error('Generate error:',e);
+    toast('Generation failed: '+e.message,'error');
+    $('genInfo').textContent='Generation failed \u2014 check console for details';
+  }finally{
+    isGenerating=false;btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg> Generate Portfolio';
+    setTimeout(()=>{$('genProgress').style.display='none';$('genFill').style.width='0%'},1500);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  LOCAL REEL PREVIEW (client-side for instant feedback)
+// ═══════════════════════════════════════════════
+const CAT_COLORS={Tech:{h:165,s:55,l:14},Design:{h:275,s:55,l:16},Marketing:{h:25,s:65,l:16},Finance:{h:220,s:55,l:14},Entertainment:{h:340,s:55,l:16},Legal:{h:210,s:30,l:18},Influencers:{h:330,s:55,l:17},Business:{h:200,s:20,l:17}};
+function catGrad(cat,shift){const c=CAT_COLORS[cat]||CAT_COLORS.Tech;const h1=(c.h+(shift||0)*18)%360,h2=(h1+25)%360;return`linear-gradient(160deg,hsl(${h1},${c.s}%,${c.l}%) 0%,hsl(${h2},${c.s+10}%,${c.l+6}%) 50%,hsl(${h1},${c.s}%,${c.l-4}%) 100%)`}
+
+function composeLocalReel(d){
+  const slides=[];const p=d.profile;const cat=p.category||'Tech';
+  const hookLine=p.bio||(p.role?`${p.role}. Turning ideas into impact.`:'Creative professional building the future.');
+  // Use profile intro video if available, otherwise first downloaded project video
+  const profileVid=p.intro_video_file_id?'/api/downloads/files/'+p.intro_video_file_id:null;
+  const vidProjs=d.projects.filter(pr=>pr.download_status==='complete'&&pr.file_id);
+  const hookBgProj=vidProjs[0];
+  const hookBg=profileVid?{video:profileVid}:hookBgProj?{video:'/api/downloads/files/'+hookBgProj.file_id,image:hookBgProj.thumbnail_url}:{gradient:catGrad(cat,0)};
+  // Hook slide
+  slides.push({id:'hook',duration:6500,bg:hookBg,elements:[
+    {type:'avatar',src:p.avatar,initial:(p.name||'?')[0],delay:200,anim:'scale-in'},
+    {type:'heading',text:p.name||'Your Name',delay:700,anim:'fade-up',cls:'large'},
+    {type:'sub',text:p.role||'Your Title',delay:1100,anim:'fade-up'},
+    {type:'badge',text:cat,delay:1600,anim:'pop-in'},
+    {type:'caption',text:hookLine.substring(0,120),delay:2200,speed:30}
+  ]});
+  // Skills slide
+  if(d.skills.length){
+    const els=[{type:'tag',text:'WHAT I BRING',delay:100,anim:'fade-up'}];
+    if(d.projects.length)els.push({type:'metric',value:d.projects.length,label:'Projects',delay:500,anim:'fade-up'});
+    els.push({type:'metric',value:d.skills.length,label:'Core Skills',delay:800,anim:'fade-up'});
+    d.skills.slice(0,5).forEach((s,i)=>els.push({type:'skill',name:s.name,level:s.level,delay:1200+i*350,anim:'slide-right'}));
+    // Use profile intro video for skills slide background
+    const skillBg=profileVid?{video:profileVid}:hookBgProj?{video:'/api/downloads/files/'+hookBgProj.file_id,image:hookBgProj.thumbnail_url}:{gradient:catGrad(cat,1)};
+    slides.push({id:'cred',duration:4500+d.skills.slice(0,5).length*400,bg:skillBg,elements:els});
+  }
+  // Project slides — each project gets a video-bg slide
+  d.projects.slice(0,8).forEach((p,i)=>{
+    const plat=p.platform||detectPlat(p.url);
+    const hasVideo=p.download_status==='complete'&&p.file_id;
+    const videoUrl=hasVideo?'/api/downloads/files/'+p.file_id:null;
+    const bg=videoUrl?{video:videoUrl,image:p.thumbnail_url}:p.thumbnail_url?{image:p.thumbnail_url}:{gradient:catGrad(cat,i+2)};
+    const duration=videoUrl?8000:6000;
+    const els=[
+      {type:'tag',text:(PLAT_NAMES[plat]||plat).toUpperCase(),delay:100,anim:'fade-up'},
+      {type:'heading',text:p.title||'Project',delay:500,anim:'fade-up'},
+    ];
+    if(p.description)els.push({type:'sub',text:p.description.substring(0,80),delay:1000,anim:'fade-up'});
+    if(!hasVideo&&p.download_status==='downloading')els.push({type:'badge',text:'\u23f3 Downloading video\u2026',delay:1500,anim:'pop-in'});
+    if(!videoUrl&&p.url)els.push({type:'pill',text:`View on ${PLAT_NAMES[plat]||plat} \u2192`,url:p.url,platform:plat,delay:2000,anim:'fade-up'});
+    slides.push({id:`proj-${i}`,duration,bg,elements:els});
+  });
+  // Testimonials — use testimonial's own media as bg, fallback to project videos
+  d.testimonials.slice(0,2).forEach((t,i)=>{
+    const tmVid=t.media_file_id?'/api/downloads/files/'+t.media_file_id:null;
+    const tmImg=t.media_url&&!isVideoPlatformUrl(t.media_url)?t.media_url:null;
+    let tbg;
+    if(tmVid)tbg={video:tmVid,image:tmImg||undefined};
+    else if(tmImg)tbg={image:tmImg};
+    else{const tbgP=vidProjs[i%Math.max(vidProjs.length,1)];tbg=tbgP?{video:'/api/downloads/files/'+tbgP.file_id,image:tbgP.thumbnail_url}:{gradient:catGrad(cat,10+i)}}
+    slides.push({id:`test-${i}`,duration:Math.max(6000,(t.text||'').length*45+3500),bg:tbg,elements:[
+      {type:'tag',text:'WHAT CLIENTS SAY',delay:100,anim:'fade-up'},
+      {type:'quote',delay:400,anim:'scale-in'},
+      {type:'caption',text:t.text,delay:900,speed:35,italic:true},
+      {type:'sub',text:`\u2014 ${t.author}${t.company?', '+t.company:''}`,delay:-1,anim:'fade-up'}
+    ]});
+  });
+  // CTA
+  // CTA — use last project video as bg
+  const ctaBgP=vidProjs.length?vidProjs[vidProjs.length-1]:null;
+  const ctaBg=ctaBgP?{video:'/api/downloads/files/'+ctaBgP.file_id,image:ctaBgP.thumbnail_url}:{gradient:catGrad(cat,12)};
+  const actEls=[{type:'heading',text:"Let\u2019s Work\nTogether",delay:200,anim:'fade-up',cls:'large'}];
+  if(p.email)actEls.push({type:'cta',text:'Get in Touch',action:'mailto:'+p.email,delay:900,anim:'fade-up'});
+  actEls.push({type:'footer',text:'Built with Reshuffle',delay:1500,anim:'fade-in'});
+  slides.push({id:'action',duration:5000,bg:ctaBg,elements:actEls});
+  return slides;
+}
+
+// ═══════════════════════════════════════════════
+//  REEL PLAYER (in phone frame)
+// ═══════════════════════════════════════════════
+let reelSlides=[],reelIdx=0,reelPlaying=true,reelTimer=null,typingTimers=[];
+function clearTyping(){typingTimers.forEach(t=>clearTimeout(t));typingTimers=[]}
+
+function buildPreviewReel(){
+  clearTyping();clearTimeout(reelTimer);
+  reelSlides=composeLocalReel(data);reelIdx=0;reelPlaying=true;updatePlayPause();
+  renderReelChrome();if(reelSlides.length)goSlide(0);
+}
+
+function renderReelChrome(){
+  const el=$('reelPlayer');const p=data.profile;
+  if(!p.name&&!p.role){el.innerHTML='<div class="reel-empty"><div class="reel-empty-icon">\uD83C\uDFAC</div><div class="reel-empty-text">Fill in your profile to<br>preview your reel</div></div>';return}
+  let h='';
+  h+=`<div class="reel-progress">${reelSlides.map((_,i)=>`<div class="reel-seg" data-idx="${i}"><div class="reel-seg-fill"></div></div>`).join('')}</div>`;
+  h+=`<div class="reel-header">`;
+  if(p.avatar)h+=`<div class="reel-avatar"><img src="${escA(p.avatar)}" onerror="this.parentElement.innerHTML='${escA((p.name||'?')[0])}'"></div>`;
+  else h+=`<div class="reel-avatar">${esc((p.name||'?')[0])}</div>`;
+  h+=`<div><div class="reel-user-name">${esc(p.name||'')}</div><div class="reel-user-cat">${esc(p.category||'')}</div></div></div>`;
+  h+='<div class="reel-slides" id="reelSlides">';
+  reelSlides.forEach((slide,i)=>{
+    h+=`<div class="reel-slide" data-slide="${i}"><div class="reel-slide-bg">`;
+    if(slide.bg.video)h+=`<video class="reel-slide-bg-video" src="${escA(slide.bg.video)}" muted loop playsinline preload="auto" poster="${escA(slide.bg.image||'')}"></video>`;
+    else if(slide.bg.image)h+=`<img class="reel-slide-bg-img" src="${escA(slide.bg.image)}" onerror="this.style.display='none'">`;
+    if(slide.bg.gradient)h+=`<div class="reel-slide-bg-gradient" style="background:${slide.bg.gradient}"></div>`;
+    h+='</div><div class="reel-slide-overlay"></div><div class="reel-slide-content">';
+    slide.elements.forEach(el=>{h+=renderEl(el)});
+    h+='</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="reel-touch reel-touch-l" onclick="reelPrev()"></div><div class="reel-touch reel-touch-r" onclick="reelNext()"></div>';
+  h+=`<div class="reel-nav">${reelSlides.map((_,i)=>`<div class="reel-dot" data-idx="${i}"></div>`).join('')}</div>`;
+  el.innerHTML=h;
+}
+
+function renderEl(el){
+  const d=`data-delay="${el.delay}" data-anim="${el.anim||''}"`;
+  switch(el.type){
+    case 'avatar':return `<div class="s-visual"><div class="s-avatar" ${d}>${el.src?`<img src="${escA(el.src)}" onerror="this.parentElement.textContent='${escA(el.initial||'?')}'">`:esc(el.initial||'?')}</div></div>`;
+    case 'heading':return `<div class="s-heading ${el.cls||''}" ${d}>${esc(el.text)}</div>`;
+    case 'sub':return `<div class="s-sub" ${d}>${esc(el.text)}</div>`;
+    case 'badge':return `<div class="s-badge" ${d}>${esc(el.text)}</div>`;
+    case 'caption':return `<div class="s-caption${el.italic?' italic':''}" data-typed="${escA(el.text)}" data-speed="${el.speed||30}" data-delay="${el.delay}"></div>`;
+    case 'tag':return `<div class="s-tag" ${d}>${esc(el.text)}</div>`;
+    case 'metric':return `<div class="s-metric" ${d} data-count="${el.value}"><div class="s-metric-val">0</div><div class="s-metric-label">${esc(el.label)}</div></div>`;
+    case 'skill':return `<div class="s-skill" ${d}><div class="s-skill-row"><span class="s-skill-name">${esc(el.name)}</span><span class="s-skill-pct">${el.level}%</span></div><div class="s-skill-track"><div class="s-skill-fill" data-level="${el.level}"></div></div></div>`;
+    case 'pill':{const p=el.platform||'website';return `<a class="s-pill" ${d} href="${escA(el.url||'#')}" target="_blank"><div class="s-pill-icon" style="background:${PLAT_COLORS[p]||PLAT_COLORS.website}">${PLAT_EMOJI[p]||'\uD83D\uDD17'}</div>${esc(el.text)}</a>`}
+    case 'embed-thumb':return `<div class="s-embed-mini" ${d}><img src="${escA(el.src)}" alt="" style="width:100%;border-radius:8px;max-height:140px;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>`;
+    case 'cta':return `<a class="s-cta" ${d} href="${escA(el.action||'#')}" target="_blank">${esc(el.text)}</a>`;
+    case 'quote':return `<div class="s-quote" ${d}>\u201C</div>`;
+    case 'footer':return `<div class="s-footer" ${d}>${esc(el.text)}</div>`;
+    default:return '';
+  }
+}
+
+function goSlide(idx){
+  if(idx<0||idx>=reelSlides.length)return;clearTyping();clearTimeout(reelTimer);reelIdx=idx;const slide=reelSlides[idx];
+  document.querySelectorAll('.reel-slide').forEach(s=>s.classList.remove('active'));
+  const active=document.querySelector(`.reel-slide[data-slide="${idx}"]`);if(active)active.classList.add('active');
+  // Pause all background videos, play the active one
+  document.querySelectorAll('.reel-slide-bg-video').forEach(v=>{v.pause();v.currentTime=0});
+  const bgVid=active?.querySelector('.reel-slide-bg-video');
+  if(bgVid){bgVid.currentTime=0;bgVid.play().catch(()=>{})}
+  const bgImg=active?.querySelector('.reel-slide-bg-img');if(bgImg){bgImg.classList.remove('ken-burns');void bgImg.offsetWidth;bgImg.classList.add('ken-burns')}
+  document.querySelectorAll('.reel-seg').forEach((seg,i)=>{seg.classList.remove('active','done');const f=seg.querySelector('.reel-seg-fill');f.style.width='';f.style.transition='none';if(i<idx)seg.classList.add('done')});
+  document.querySelectorAll('.reel-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  const activeSeg=document.querySelector(`.reel-seg[data-idx="${idx}"]`);
+  if(activeSeg){const f=activeSeg.querySelector('.reel-seg-fill');activeSeg.classList.add('active');requestAnimationFrame(()=>{f.style.transition=`width ${slide.duration}ms linear`;f.style.width='100%'})}
+  if(active)animEls(active,slide);
+  if(reelPlaying)reelTimer=setTimeout(()=>{reelIdx<reelSlides.length-1?goSlide(reelIdx+1):goSlide(0)},slide.duration);
+}
+
+function animEls(container){
+  container.querySelectorAll('[data-anim]').forEach(el=>{
+    const delay=parseInt(el.dataset.delay)||0;const anim=el.dataset.anim;if(!anim||delay<0)return;
+    el.classList.remove('anim-fade-up','anim-scale-in','anim-pop-in','anim-slide-right','anim-fade-in','anim-pulse');el.style.opacity='0';
+    const t=setTimeout(()=>{el.classList.add(`anim-${anim}`);
+      if(el.classList.contains('s-metric')&&el.dataset.count)countUp(el.querySelector('.s-metric-val'),parseInt(el.dataset.count),800);
+      if(el.classList.contains('s-skill')){const f=el.querySelector('.s-skill-fill');if(f)setTimeout(()=>{f.style.width=f.dataset.level+'%'},100)}
+      if(el.classList.contains('s-cta'))setTimeout(()=>el.classList.add('anim-pulse'),600);
+    },delay);typingTimers.push(t);
+  });
+  container.querySelectorAll('[data-typed]').forEach(el=>{
+    const text=el.dataset.typed;const speed=parseInt(el.dataset.speed)||30;const delay=parseInt(el.dataset.delay)||0;
+    el.innerHTML='';const t=setTimeout(()=>typeText(el,text,speed),delay);typingTimers.push(t);
+  });
+}
+
+function typeText(el,text,speed){
+  let i=0;el.innerHTML='';
+  function tick(){if(i<text.length){el.textContent=text.substring(0,i+1);const c=document.createElement('span');c.className='cursor';el.appendChild(c);i++;typingTimers.push(setTimeout(tick,speed+(Math.random()*15)))}else{const c=el.querySelector('.cursor');if(c)setTimeout(()=>c.remove(),800);
+    const slide=el.closest('.reel-slide');if(slide)slide.querySelectorAll('[data-delay="-1"]').forEach(d=>{typingTimers.push(setTimeout(()=>{d.style.opacity='0';d.classList.add('anim-'+(d.dataset.anim||'fade-up'))},400))});
+  }}
+  tick();
+}
+
+function countUp(el,target,dur){const start=performance.now();function frame(now){const p=Math.min((now-start)/dur,1);el.textContent=Math.round((1-Math.pow(1-p,3))*target);if(p<1)requestAnimationFrame(frame)}requestAnimationFrame(frame)}
+
+function reelNext(){reelIdx<reelSlides.length-1?goSlide(reelIdx+1):goSlide(0)}
+function reelPrev(){reelIdx>0?goSlide(reelIdx-1):goSlide(reelSlides.length-1)}
+function reelRestart(){goSlide(0)}
+function reelToggle(){reelPlaying=!reelPlaying;updatePlayPause();if(reelPlaying)goSlide(reelIdx);else clearTimeout(reelTimer)}
+function updatePlayPause(){$('pauseIco').style.display=reelPlaying?'':'none';$('playIco').style.display=reelPlaying?'none':''}
+
+// === SHARE ===
+function openShareModal(){
+  readProfile();save();
+  const shareData={profile:data.profile,projects:data.projects,skills:data.skills,testimonials:data.testimonials};
+  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));
+  const shareUrl=location.origin+location.pathname.replace(/index\.html$/,'')+'view.html#'+encoded;
+  openModal(`<div class="modal-hd"><h3>Share Your Portfolio</h3><button class="modal-close" onclick="closeModal()">${closeX()}</button></div><div class="modal-bd"><p style="font-size:12px;color:var(--text2);margin-bottom:10px">Share this link \u2014 viewers see your portfolio as an interactive reel.</p><div class="share-box"><input class="share-input" id="shareUrl" value="${escA(shareUrl)}" readonly onclick="this.select()"><button class="btn btn-primary btn-sm" onclick="copyShare()">Copy</button></div>${data.lastHtml?'<p style="font-size:11px;color:var(--text3);margin-top:12px">You also have a <a href="#" onclick="openSSRView();return false">server-rendered version</a> from your last generation.</p>':''}</div><div class="modal-ft"><button class="btn btn-secondary" onclick="closeModal()">Close</button><a href="${escA(shareUrl)}" target="_blank" class="btn btn-primary">Open Reel \u2192</a></div>`);
+}
+function copyShare(){const i=$('shareUrl');i.select();navigator.clipboard.writeText(i.value).then(()=>toast('Copied!','success')).catch(()=>{document.execCommand('copy');toast('Copied!','success')})}
+function openSSRView(){try{sessionStorage.setItem('reshuffle_ssr_html',data.lastHtml)}catch(e){}window.open('view.html','_blank');closeModal()}
+
+// === RESET ===
+function resetAll(){if(!confirm('Reset everything? This clears all data.'))return;data=defaults();save();populateEditor();renderAll();buildPreviewReel();toast('Reset','success')}
+
+// === MOBILE ===
+function showMobilePreview(){$('previewPanel').classList.add('mobile-show')}
+function hideMobilePreview(){$('previewPanel').classList.remove('mobile-show')}
+
+// === TOAST ===
+function toast(msg,type){const el=document.createElement('div');el.className=`toast ${type||'success'}`;el.textContent=msg;$('toastBox').appendChild(el);setTimeout(()=>el.remove(),3000)}
+
+// === POPULATE & INIT ===
+function populateEditor(){$('pf-name').value=data.profile.name||'';$('pf-role').value=data.profile.role||'';$('pf-category').value=data.profile.category||'Tech';$('pf-bio').value=data.profile.bio||'';$('pf-avatar').value=data.profile.avatar||'';$('pf-email').value=data.profile.email||'';$('pf-intro-video').value=data.profile.intro_video_url||'';updateProfileVideoStatus()}
+function renderAll(){renderProjects();renderSkills();renderTestimonials();checkPendingDownloads()}
+
+// Check if any projects have pending downloads on page load
+function checkPendingDownloads(){
+  const pending=data.projects.filter(p=>p.download_status==='downloading'||p.download_status==='starting'||p.download_status==='queued'||p.download_status==='processing');
+  const profilePending=data.profile.intro_video_status==='downloading'||data.profile.intro_video_status==='starting'||data.profile.intro_video_status==='queued'||data.profile.intro_video_status==='processing';
+  const tmPending=data.testimonials.some(t=>t.media_status==='downloading'||t.media_status==='starting'||t.media_status==='queued'||t.media_status==='processing');
+  if(pending.length||profilePending||tmPending)startProjectPoll();
+}
+
+// ═══════════════════════════════════════════════
+//  EVENT BINDING (no inline handlers)
+// ═══════════════════════════════════════════════
+// Header buttons
+$('resetBtn').addEventListener('click', resetAll);
+$('shareBtn').addEventListener('click', openShareModal);
+
+// Tab buttons
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// Profile form auto-save
+['pf-name','pf-role','pf-bio','pf-avatar','pf-email'].forEach(id => {
+  $(id).addEventListener('input', autoSave);
+});
+$('pf-category').addEventListener('change', autoSave);
+
+// Profile intro video — auto-download on blur
+$('pf-intro-video').addEventListener('input', autoSave);
+$('pf-intro-video').addEventListener('blur', () => {
+  const url = $('pf-intro-video').value.trim();
+  if(url && url !== data.profile.intro_video_url) {
+    data.profile.intro_video_url = url;
+    data.profile.intro_video_file_id = null;
+    data.profile.intro_video_status = null;
+    data.profile.intro_video_job_id = null;
+    save(); autoDownloadProfileVideo(url);
+  } else if(!url && data.profile.intro_video_url) {
+    data.profile.intro_video_url = ''; data.profile.intro_video_file_id = null;
+    data.profile.intro_video_status = null; data.profile.intro_video_job_id = null;
+    save(); updateProfileVideoStatus(); buildPreviewReel();
+  }
+});
+
+// Projects tab
+$('addProjectBtn').addEventListener('click', () => openProjectModal());
+
+// Skills & Testimonials
+$('addSkillBtn').addEventListener('click', () => openSkillModal());
+$('addTestimonialBtn').addEventListener('click', () => openTestimonialModal());
+
+// Generate button
+$('generateBtn').addEventListener('click', generatePortfolio);
+
+// Preview controls
+$('reelPrevBtn').addEventListener('click', reelPrev);
+$('playPauseBtn').addEventListener('click', reelToggle);
+$('reelNextBtn').addEventListener('click', reelNext);
+$('reelRestartBtn').addEventListener('click', reelRestart);
+
+// Mobile preview
+$('mobilePreviewBtn').addEventListener('click', showMobilePreview);
+$('mobileCloseBtn').addEventListener('click', hideMobilePreview);
+
+populateEditor();renderAll();buildPreviewReel();
+</script>
+</body>
+</html>

@@ -75,7 +75,7 @@ export async function ingestContent(input: RawInput): Promise<IngestResult> {
         if (!input.text) {
           throw new Error('Text content is required');
         }
-        normalized = await processTextInput(input.text, input.user_metadata);
+        normalized = processTextInput(input.text, input.user_metadata);
         break;
       
       default:
@@ -98,7 +98,10 @@ export async function ingestContent(input: RawInput): Promise<IngestResult> {
 }
 
 /**
- * Process URL input based on detected platform
+ * Process URL input based on detected platform.
+ * YouTube and GitHub get API-based extraction.
+ * ALL other URLs go through the universal media resolver
+ * which fetches oEmbed / OG metadata and produces embeddable content.
  */
 async function processUrl(input: RawInput): Promise<NormalizedContent> {
   if (!input.url) {
@@ -114,13 +117,10 @@ async function processUrl(input: RawInput): Promise<NormalizedContent> {
     case 'github':
       return processGitHubURL(input.url);
     
-    case 'instagram':
-    case 'tiktok':
-    case 'linkedin':
-    case 'twitter':
-    case 'website':
+    // ALL other URLs – Instagram, LinkedIn, X, TikTok, Behance, Dribbble,
+    // Google Drive, Vimeo, or any generic website – go through the
+    // universal media resolver for rich embed extraction.
     default:
-      // All other URLs become clickable external links
       return processExternalLink(input.url, platform, input.user_metadata);
   }
 }
@@ -130,7 +130,7 @@ async function processUrl(input: RawInput): Promise<NormalizedContent> {
 // ============================================
 
 /**
- * Process multiple inputs in batch
+ * Process multiple inputs in batch with concurrency control
  */
 export async function ingestBatch(
   inputs: RawInput[],
@@ -139,13 +139,27 @@ export async function ingestBatch(
   const results: IngestResult[] = [];
   const normalizedContent: NormalizedContent[] = [];
   
-  // Process all inputs
-  for (const input of inputs) {
-    const result = await ingestContent(input);
-    results.push(result);
+  // Process inputs with bounded concurrency (max 5 at a time)
+  const CONCURRENCY = 5;
+  for (let i = 0; i < inputs.length; i += CONCURRENCY) {
+    const batch = inputs.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map(input => ingestContent(input))
+    );
     
-    if (result.success && result.normalized) {
-      normalizedContent.push(result.normalized);
+    for (const settled of batchResults) {
+      if (settled.status === 'fulfilled') {
+        results.push(settled.value);
+        if (settled.value.success && settled.value.normalized) {
+          normalizedContent.push(settled.value.normalized);
+        }
+      } else {
+        results.push({
+          success: false,
+          content_id: '',
+          error: settled.reason?.message || 'Processing failed'
+        });
+      }
     }
   }
   

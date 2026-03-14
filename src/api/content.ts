@@ -1,6 +1,7 @@
 /**
  * Content API Routes
- * Endpoints for extracting and managing content
+ * Endpoints for extracting, resolving media, and managing content
+ * Includes rate limiting and universal media resolution
  */
 
 import { Router, Request, Response } from 'express';
@@ -9,7 +10,9 @@ import { z } from 'zod';
 import type { Category, RawInput } from '../types/index.js';
 import { ingestContent, ingestBatch } from '../services/ingestion.js';
 import { scoreContent } from '../services/scoring.js';
-import { detectPlatform, isExtractable } from '../utils/platform-detection.js';
+import { detectPlatform, isExtractable, detectPlatformExtended, isEmbeddable, getPlatformDisplayName, getPlatformColor } from '../utils/platform-detection.js';
+import { resolveMedia } from '../services/media-resolver.js';
+import { extractLimiter, uploadLimiter } from '../middleware/index.js';
 
 const router = Router();
 
@@ -18,7 +21,20 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB
+    fileSize: 100 * 1024 * 1024, // 100MB
+    files: 20
+  },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
+      'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-m4v',
+      'application/pdf',
+    ];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} is not allowed`));
+    }
   }
 });
 
@@ -27,9 +43,9 @@ const upload = multer({
 // ============================================
 
 const ExtractUrlSchema = z.object({
-  url: z.string().url(),
-  title: z.string().optional(),
-  description: z.string().optional()
+  url: z.string().url().max(2048),
+  title: z.string().max(200).optional(),
+  description: z.string().max(1000).optional()
 });
 
 const ExtractBatchSchema = z.object({
@@ -37,12 +53,25 @@ const ExtractBatchSchema = z.object({
     'Finance', 'Entertainment', 'Design', 'Legal',
     'Tech', 'Marketing', 'Influencers', 'Business'
   ]),
-  urls: z.array(ExtractUrlSchema).optional(),
+  urls: z.array(ExtractUrlSchema).max(50).optional(),
   texts: z.array(z.object({
-    text: z.string().min(1),
-    title: z.string().optional(),
-    description: z.string().optional()
-  })).optional()
+    text: z.string().min(1).max(50000),
+    title: z.string().max(200).optional(),
+    description: z.string().max(1000).optional()
+  })).max(20).optional(),
+  videos: z.array(z.object({
+    url: z.string().url().max(2048),
+    title: z.string().max(200).optional(),
+    description: z.string().max(1000).optional()
+  })).max(20).optional()
+});
+
+const ResolveMediaSchema = z.object({
+  url: z.string().url().max(2048)
+});
+
+const ResolveBatchMediaSchema = z.object({
+  urls: z.array(z.string().url().max(2048)).min(1).max(20)
 });
 
 // ============================================
@@ -52,8 +81,13 @@ const ExtractBatchSchema = z.object({
 /**
  * POST /content/extract
  * Extract content from a URL or file
+ * Rate limited: 30 per 5 min
  */
-router.post('/extract', upload.single('file'), async (req: Request, res: Response): Promise<void> => {
+router.post('/extract',
+  extractLimiter,
+  uploadLimiter,
+  upload.single('file'),
+  async (req: Request, res: Response): Promise<void> => {
   try {
     let input: RawInput;
     
@@ -145,8 +179,13 @@ router.post('/extract', upload.single('file'), async (req: Request, res: Respons
 /**
  * POST /content/batch
  * Extract multiple content items and score them
+ * Rate limited: 30 per 5 min
  */
-router.post('/batch', upload.array('files', 20), async (req: Request, res: Response): Promise<void> => {
+router.post('/batch',
+  extractLimiter,
+  uploadLimiter,
+  upload.array('files', 20),
+  async (req: Request, res: Response): Promise<void> => {
   try {
     // Parse JSON body
     let body: any;
@@ -165,7 +204,7 @@ router.post('/batch', upload.array('files', 20), async (req: Request, res: Respo
       return;
     }
     
-    const { category, urls, texts } = validation.data;
+    const { category, urls, texts, videos } = validation.data;
     const rawInputs: RawInput[] = [];
     
     // Add URLs
@@ -177,6 +216,20 @@ router.post('/batch', upload.array('files', 20), async (req: Request, res: Respo
           user_metadata: {
             title: urlInput.title,
             description: urlInput.description
+          }
+        });
+      }
+    }
+
+    // Add video URLs (treated as URLs, media resolver handles the embed)
+    if (videos) {
+      for (const videoInput of videos) {
+        rawInputs.push({
+          type: 'url',
+          url: videoInput.url,
+          user_metadata: {
+            title: videoInput.title,
+            description: videoInput.description
           }
         });
       }
@@ -222,7 +275,8 @@ router.post('/batch', upload.array('files', 20), async (req: Request, res: Respo
       total: result.total,
       processed: result.successful,
       failed: result.failed,
-      content: result.scored_content
+      content: result.scored_content,
+      media_embeds_resolved: result.normalized_content.filter(c => c.media_embed).length
     });
     
   } catch (error) {
@@ -235,8 +289,123 @@ router.post('/batch', upload.array('files', 20), async (req: Request, res: Respo
 });
 
 /**
+ * POST /content/resolve-media
+ * Resolve a URL into embeddable media (video/image embed HTML, thumbnails, etc.)
+ * Works with YouTube, Vimeo, Instagram, TikTok, X/Twitter, LinkedIn, Behance, Dribbble, Google Drive, etc.
+ * Rate limited: 30 per 5 min
+ */
+router.post('/resolve-media', extractLimiter, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const validation = ResolveMediaSchema.safeParse(req.body);
+    if (!validation.success) {
+      res.status(400).json({
+        error: 'Validation failed',
+        details: validation.error.errors
+      });
+      return;
+    }
+
+    const { url } = validation.data;
+    const resolved = await resolveMedia(url);
+
+    if (!resolved) {
+      const platform = detectPlatformExtended(url);
+      res.json({
+        success: false,
+        url,
+        platform,
+        embeddable: false,
+        message: `Could not resolve embeddable media from ${platform}. The URL may require authentication or may not contain embeddable content.`
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      url,
+      media: {
+        embed_html: resolved.embed_html,
+        thumbnail_url: resolved.thumbnail_url,
+        platform_url: resolved.platform_url,
+        media_type: resolved.media_type,
+        title: resolved.title,
+        author_name: resolved.author_name,
+        author_url: resolved.author_url,
+        width: resolved.width,
+        height: resolved.height,
+        duration_seconds: resolved.duration_seconds,
+        platform_name: resolved.platform_name
+      }
+    });
+
+  } catch (error) {
+    console.error('Media resolution error:', error);
+    res.status(500).json({
+      error: 'Media resolution failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /content/resolve-media/batch
+ * Resolve multiple URLs into embeddable media in parallel
+ * Rate limited: 30 per 5 min
+ */
+router.post('/resolve-media/batch', extractLimiter, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const validation = ResolveBatchMediaSchema.safeParse(req.body);
+    if (!validation.success) {
+      res.status(400).json({
+        error: 'Validation failed',
+        details: validation.error.errors
+      });
+      return;
+    }
+
+    const { urls } = validation.data;
+    
+    // Resolve in parallel with bounded concurrency
+    const results = await Promise.allSettled(
+      urls.map(url => resolveMedia(url))
+    );
+
+    const resolved = urls.map((url, i) => {
+      const result = results[i];
+      if (result.status === 'fulfilled' && result.value) {
+        return {
+          url,
+          success: true,
+          media: result.value
+        };
+      }
+      return {
+        url,
+        success: false,
+        platform: detectPlatformExtended(url),
+        message: 'Could not resolve embeddable media'
+      };
+    });
+
+    res.json({
+      success: true,
+      total: urls.length,
+      resolved_count: resolved.filter(r => r.success).length,
+      results: resolved
+    });
+
+  } catch (error) {
+    console.error('Batch media resolution error:', error);
+    res.status(500).json({
+      error: 'Batch media resolution failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
  * POST /content/detect-platform
- * Detect platform from a URL
+ * Detect platform from a URL (enhanced with embed capability info)
  */
 router.post('/detect-platform', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -255,15 +424,23 @@ router.post('/detect-platform', async (req: Request, res: Response): Promise<voi
     }
     
     const platform = detectPlatform(url);
+    const extended = detectPlatformExtended(url);
     const extractable = isExtractable(platform);
+    const embeddable = isEmbeddable(url);
     
     res.json({
       url,
       platform,
+      platform_display: getPlatformDisplayName(platform),
+      platform_color: getPlatformColor(platform),
+      extended_platform: extended,
       extractable,
-      note: extractable 
-        ? `Content will be extracted from ${platform}` 
-        : `Link will be saved as clickable ${platform} link (no extraction)`
+      embeddable,
+      note: embeddable
+        ? `Media from ${getPlatformDisplayName(platform)} can be embedded directly`
+        : extractable
+          ? `Content will be extracted from ${getPlatformDisplayName(platform)}`
+          : `Link will be saved as clickable ${getPlatformDisplayName(platform)} link`
     });
     
   } catch (error) {
@@ -277,8 +454,9 @@ router.post('/detect-platform', async (req: Request, res: Response): Promise<voi
 /**
  * POST /content/score
  * Score content for a specific category
+ * Rate limited: 30 per 5 min
  */
-router.post('/score', async (req: Request, res: Response): Promise<void> => {
+router.post('/score', extractLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const { content, category } = req.body;
     

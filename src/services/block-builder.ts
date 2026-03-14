@@ -70,22 +70,26 @@ export function buildBlock(
 function buildMediaBlock(content: ScoredContent, base: any): MediaBlock {
   const isVideo = content.type === 'video' || content.source === 'youtube';
   
+  // If content has a resolved media embed, carry it through
+  const embedHtml = content.media_embed?.embed_html || content.extracted_data?.embed_html || '';
+  
   return {
     ...base,
     block_type: 'media',
     content: {
       media_type: isVideo ? 'video' : 'image',
       sources: [{
-        url: content.file_path || content.extracted_data?.embed_url || '',
+        url: content.file_path || content.extracted_data?.embed_url || content.media_embed?.platform_url || '',
         quality: 'high' as const,
         mime_type: isVideo ? 'video/mp4' : 'image/jpeg'
       }],
       thumbnail: {
-        url: content.extracted_data?.thumbnail_url || content.file_path || '',
+        url: content.extracted_data?.thumbnail_url || content.media_embed?.thumbnail_url || content.file_path || '',
         blurhash: null
       },
       alt_text: content.title || 'Media content',
       caption: content.description || null,
+      embed_html: embedHtml || null,
       playback: isVideo ? {
         autoplay: true,
         loop: true,
@@ -358,6 +362,20 @@ function buildExternalLinkBlock(content: ScoredContent, base: any): ExternalLink
     }
     description = parts.join(' • ');
   }
+
+  // Build media embed data from resolved media
+  let mediaEmbed = null;
+  if (content.media_embed) {
+    mediaEmbed = {
+      embed_html: content.media_embed.embed_html,
+      media_type: content.media_embed.media_type,
+      width: content.media_embed.width,
+      height: content.media_embed.height,
+      author_name: content.media_embed.author_name,
+      author_url: content.media_embed.author_url,
+      duration_seconds: content.media_embed.duration_seconds,
+    };
+  }
   
   return {
     ...base,
@@ -368,9 +386,11 @@ function buildExternalLinkBlock(content: ScoredContent, base: any): ExternalLink
       preview: {
         title: content.title || 'External Link',
         description,
-        thumbnail_url: content.extracted_data?.thumbnail_url || null,
-        favicon_url: null
+        thumbnail_url: content.media_embed?.thumbnail_url || content.extracted_data?.thumbnail_url || null,
+        favicon_url: null,
+        platform_name: content.media_embed?.platform_name || content.extracted_data?.platform_name || undefined,
       },
+      media_embed: mediaEmbed,
       style: 'card',
       open_in: 'browser'
     }
